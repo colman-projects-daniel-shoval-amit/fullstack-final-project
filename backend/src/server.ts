@@ -11,8 +11,6 @@ import cors from "cors";
 import { authenticate } from "./middlewares/authMiddleware";
 import { swaggerUi, swaggerSpec } from "./swagger";
 
-dotenv.config();
-
 const app = express();
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

@@ -5,6 +5,14 @@ import UserModel from "../models/userModel";
 
 export type AuthRequest = Request & { user?: { _id: string } };
 
+declare global {
+  namespace Express {
+    interface Request {
+      user?: { _id: string };
+    }
+  }
+}
+
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
