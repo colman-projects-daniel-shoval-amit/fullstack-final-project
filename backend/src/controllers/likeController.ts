@@ -29,7 +29,7 @@ class LikeController extends baseController {
     async create(req: AuthRequest, res: Response) {
         const postId = req.body.postId;
         req.body.userId = req.user?._id;
-        req.body.author = undefined; // don't write author
+        req.body.authorId = undefined; // don't write author
         try {
             const post = await PostModel.findById(postId);
             if (!post) {

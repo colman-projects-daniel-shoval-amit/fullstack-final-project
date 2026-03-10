@@ -38,7 +38,7 @@ describe("Post Tests", () => {
                 title: "Test Post Title",
                 text: "Post for tests",
                 image: "post.tests",
-                authorId: "Test author",
+                authorId: loginUser1._id,
             });
         expect(response.statusCode).toBe(201);
         expect(response.body.authorId).toBe(loginUser1._id);

@@ -37,7 +37,7 @@ describe("Like Tests", () => {
                 title: "Like post",
                 text: "Post for Likes",
                 image: "like.tests",
-                author: "Test author",
+                authorId: loginUser1._id,
             });
         expect(response.statusCode).toBe(201);
         postId = response.body._id;
