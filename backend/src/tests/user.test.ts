@@ -6,7 +6,7 @@ import { Express } from "express";
 import userModel from "../models/userModel";
 import commentModel from "../models/commentModel";
 import postModel from "../models/postModel";
-import {describe, expect, test, beforeAll, afterAll} from '@jest/globals';
+import { describe, expect, test, beforeAll, afterAll } from '@jest/globals';
 import { getLogedInUser, UserData, userData1, userData2 } from "./utils";
 
 
@@ -22,8 +22,8 @@ beforeAll(async () => {
     app = await initApp();
     await userModel.deleteMany();
     const user = await userModel.create(testUser);
-    loginUser = await getLogedInUser(userData1,app);
-    
+    loginUser = await getLogedInUser(userData1, app);
+
     userId = user._id.toString();
 });
 

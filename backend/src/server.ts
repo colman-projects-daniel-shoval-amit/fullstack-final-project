@@ -7,6 +7,9 @@ import commentsRouter from "./routes/commentRoute";
 import userRouter from "./routes/userRoute";
 import postRouter from "./routes/postRoute";
 import authRouter from "./routes/authRoute";
+import likeRouter from "./routes/likeRoute";
+import chatRouter from "./routes/chatRoute";
+import messageRouter from "./routes/messageRoute";
 import cors from "cors";
 import { authenticate } from "./middlewares/authMiddleware";
 import { swaggerUi, swaggerSpec } from "./swagger";
@@ -16,9 +19,9 @@ dotenv.config();
 const app = express();
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Shoval & Daniel Posts & Comments API Documentation'
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Shoval & Daniel Posts & Comments API Documentation'
 }));
 
 app.use(bodyParser.json());
@@ -27,9 +30,12 @@ app.use(cors())
 
 app.use('/auth', authRouter);
 app.use(authenticate);
+app.use('/posts', postRouter);
 app.use('/comments', commentsRouter);
 app.use('/users', userRouter);
-app.use('/posts', postRouter);
+app.use('/likes', likeRouter);
+app.use('/chats', chatRouter);
+app.use('/messages', messageRouter);
 
 const db = mongoose.connection;
 db.on("error", (error) => console.error(error));

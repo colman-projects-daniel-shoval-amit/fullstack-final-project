@@ -5,7 +5,7 @@ import { Express } from "express";
 import userModel from "../models/userModel";
 import commentModel from "../models/commentModel";
 import postModel from "../models/postModel";
-import {describe, expect, test, beforeAll, afterAll} from '@jest/globals';
+import { describe, expect, test, beforeAll, afterAll } from '@jest/globals';
 import { getLogedInUser, UserData, userData1, userData2 } from "./utils";
 
 let app: Express;
@@ -17,8 +17,8 @@ beforeAll(async () => {
     app = await initApp();
     await userModel.deleteMany();
     await postModel.deleteMany();
-    loginUser1 = await getLogedInUser(userData1,app);
-    loginUser2 = await getLogedInUser(userData2,app);
+    loginUser1 = await getLogedInUser(userData1, app);
+    loginUser2 = await getLogedInUser(userData2, app);
 });
 
 afterAll(async () => {
@@ -35,17 +35,19 @@ describe("Post Tests", () => {
             .post("/posts")
             .set("Authorization", "Bearer " + loginUser1.token)
             .send({
+                title: "Test Post Title",
                 text: "Post for tests",
                 image: "post.tests",
-                sender: "Test Sender",
+                authorId: "Test author",
             });
         expect(response.statusCode).toBe(201);
-        expect(response.body.sender).toBe(loginUser1._id);
+        expect(response.body.authorId).toBe(loginUser1._id);
         postId = response.body._id;
     });
 
     test("Create Post - Fail (No Auth)", async () => {
         const response = await request(app).post("/posts").send({
+            title: "Test Post Title",
             image: "Test Post",
             text: "Test text",
         });
@@ -82,7 +84,7 @@ describe("Post Tests", () => {
 
     test("Get Post By ID - Fail (Invalid ID Format)", async () => {
         const response = await request(app).get("/posts/invalid-id-123").set("Authorization", "Bearer " + loginUser1.token);
-        expect(response.statusCode).toBe(400); 
+        expect(response.statusCode).toBe(400);
     });
 
 
@@ -91,6 +93,7 @@ describe("Post Tests", () => {
             .put("/posts/" + postId)
             .set("Authorization", "Bearer " + loginUser1.token)
             .send({
+                title: "Updated Title",
                 image: "Updated image",
                 text: "Updated text",
             });
@@ -103,6 +106,7 @@ describe("Post Tests", () => {
             .put("/posts/" + postId)
             .set("Authorization", "Bearer " + loginUser2.token)
             .send({
+                title: "non owner title",
                 image: "non owner image",
                 text: "non owner text",
             });

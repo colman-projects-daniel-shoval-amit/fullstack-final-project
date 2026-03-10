@@ -12,10 +12,25 @@ const postRouter = Router();
 
 /**
  * @swagger
- * /post:
+ * /posts:
  *   get:
  *     summary: Returns the list of all the posts
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The number of items per page
  *     responses:
  *       200:
  *         description: The list of the posts
@@ -31,7 +46,7 @@ postRouter.get("/", postController.get.bind(postController));
 
 /**
  * @swagger
- * /post/{id}:
+ * /posts/{id}:
  *   get:
  *     summary: Get the post by id
  *     tags: [Posts]
@@ -56,7 +71,7 @@ postRouter.get("/:id", postController.getById.bind(postController));
 
 /**
  * @swagger
- * /post:
+ * /posts:
  *   post:
  *     summary: Create a new post
  *     tags: [Posts]
@@ -69,12 +84,12 @@ postRouter.get("/:id", postController.getById.bind(postController));
  *           schema:
  *             type: object
  *             required:
+ *               - title
  *               - text
- *               - sender
  *             properties:
- *               text:
+ *               title:
  *                 type: string
- *               sender:
+ *               text:
  *                 type: string
  *     responses:
  *       201:
@@ -92,7 +107,7 @@ postRouter.post("/", postController.create.bind(postController));
 
 /**
  * @swagger
- * /post/{id}:
+ * /posts/{id}:
  *   put:
  *     summary: Update the post by id
  *     tags: [Posts]
@@ -112,11 +127,13 @@ postRouter.post("/", postController.create.bind(postController));
  *           schema:
  *             type: object
  *             properties:
+ *               title:
+ *                 type: string
  *               text:
  *                 type: string
  *               image:
  *                 type: string
- *               sender:
+ *               authorId:
  *                 type: string
  *     responses:
  *       200:

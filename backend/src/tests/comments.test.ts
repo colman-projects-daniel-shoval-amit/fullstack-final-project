@@ -5,7 +5,7 @@ import { Express } from "express";
 import userModel from "../models/userModel";
 import commentModel from "../models/commentModel";
 import postModel from "../models/postModel";
-import {describe, expect, test, beforeAll, afterAll} from '@jest/globals';
+import { describe, expect, test, beforeAll, afterAll } from '@jest/globals';
 import { getLogedInUser, UserData, userData1, userData2 } from "./utils";
 
 let app: Express;
@@ -18,8 +18,8 @@ beforeAll(async () => {
     await userModel.deleteMany();
     await postModel.deleteMany();
     await commentModel.deleteMany();
-    loginUser1 = await getLogedInUser(userData1,app);
-    loginUser2 = await getLogedInUser(userData2,app);
+    loginUser1 = await getLogedInUser(userData1, app);
+    loginUser2 = await getLogedInUser(userData2, app);
 
 });
 
@@ -35,12 +35,13 @@ describe("Comment Tests", () => {
             .post("/posts")
             .set("Authorization", "Bearer " + loginUser1.token)
             .send({
+                title: "Title for Comments Post",
                 text: "Post for Comments",
                 image: "comment.tests",
-                sender: "Test Sender",
+                authorId: "Test author",
             });
         expect(response.statusCode).toBe(201);
-        postId = response.body._id;        
+        postId = response.body._id;
     });
 
 
@@ -53,10 +54,10 @@ describe("Comment Tests", () => {
             .send({
                 postId: postId,
                 content: "Test",
-                sender: "bob"
+                authorId: "bob"
             });
         expect(response.statusCode).toBe(201);
-        expect(response.body.sender).toBe(loginUser1._id);
+        expect(response.body.authorId).toBe(loginUser1._id);
         expect(response.body.postId).toBe(postId);
         commentId = response.body._id;
     });
@@ -95,7 +96,7 @@ describe("Comment Tests", () => {
 
     test("Get All Comments", async () => {
         const response = await request(app).get("/comments").set("Authorization", "Bearer " + loginUser1.token);
-    
+
         expect(response.statusCode).toBe(200);
         expect(response.body.length).toBeGreaterThan(0);
     });
