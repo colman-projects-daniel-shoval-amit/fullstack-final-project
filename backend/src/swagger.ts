@@ -6,7 +6,7 @@ const options: swaggerJsdoc.Options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'assignment 2 API ',
+            title: 'Fullstack Final Project API ',
             version: '1.0.0',
             description: 'API for managing Users, Posts, and Comments with authentication',
             contact: {
