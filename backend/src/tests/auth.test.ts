@@ -164,7 +164,7 @@ describe("Auth Routes Tests", () => {
 
         const response = await request(app).post("/posts")
             .set("Authorization", "Bearer " + accessToken)
-            .send({ sender: "asdfsadf", text: "shoval.png", image: "shoval.png" });
+            .send({ author: "asdfsadf", text: "shoval.png", image: "shoval.png" });
 
         expect(response.statusCode).toBe(401);
     });

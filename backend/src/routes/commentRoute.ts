@@ -16,6 +16,21 @@ const commentRouter = express.Router();
  *   get:
  *     summary: Returns the list of all the comments
  *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The number of items per page
  *     responses:
  *       200:
  *         description: The list of the comments
@@ -34,6 +49,8 @@ commentRouter.get("/", commentController.get.bind(commentController));
  *   get:
  *     summary: Get the comment by id
  *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -69,13 +86,10 @@ commentRouter.post("/", commentController.create.bind(commentController));
  *             required:
  *               - postId
  *               - content
- *               - sender
  *             properties:
  *               postId:
  *                 type: string
  *               content:
- *                 type: string
- *               sender:
  *                 type: string
  *     responses:
  *       201:

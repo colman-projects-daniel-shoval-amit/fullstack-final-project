@@ -17,15 +17,19 @@ class BaseController {
     }
 
     async get(req: Request, res: Response) {
-        const filter = req.query;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+
+        // Remove pagination parameters so they aren't used in the db filter
+        const filter = { ...req.query };
+        delete filter.page;
+        delete filter.limit;
+
         try {
-            if (filter) {
-                const data = await this.model.find(filter);
-                res.json(data);
-            } else {
-                const data = await this.model.find();
-                res.json(data);
-            }
+            const data = await this.model.find(filter)
+                .skip((page - 1) * limit)
+                .limit(limit);
+            res.json(data);
         } catch (error) {
             this.handleError(res, error);
         }

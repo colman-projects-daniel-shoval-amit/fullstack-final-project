@@ -1,4 +1,4 @@
-import { config } from "config/config";
+import { config } from "./config/config";
 import initApp from "./server";
 
 initApp().then((app) => {

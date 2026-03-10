@@ -1,11 +1,12 @@
-# Fullstack Assignment 2
+# Fullstack Final Project
 
-This is a REST API for a simple blog application for Fullstack assignment for colman, built with Node.js, Express, and MongoDB.
+This is a REST API for a simple blog application for Fullstack final project for colman, built with Node.js, Express, and MongoDB.
 
 ## Features
 
 - **Authentication**: User registration, login, logout, and refresh token mechanisms using JWT.
-- **Posts & Comments**: Create, read, update, and delete posts and comments.
+- **Posts, Comments, & Likes**: Create, read, update, and delete posts, comments, and structure likes.
+- **Chats & Messages**: Create chat rooms between users and send messages.
 - **Swagger Documentation**: Interactive API documentation.
 - **Testing**: Comprehensive tests using Jest and Supertest.
 
@@ -49,6 +50,25 @@ This is a REST API for a simple blog application for Fullstack assignment for co
 - `POST /comments`: Create a new comment.
 - `PUT /comments/:id`: Update a comment by ID.
 - `DELETE /comments/:id`: Delete a comment by ID.
+
+### Likes
+- `GET /likes`: Get all likes.
+- `GET /likes/:id`: Get a like by ID.
+- `POST /likes`: Create a new like.
+- `DELETE /likes/:id`: Delete a like by ID.
+
+### Chats
+- `GET /chats`: Get all chats.
+- `GET /chats/user/:userId`: Get all chats for a specific user.
+- `GET /chats/:id`: Get a chat by ID.
+- `POST /chats`: Create a new chat.
+- `DELETE /chats/:id`: Delete a chat by ID.
+
+### Messages
+- `GET /messages`: Get all messages.
+- `GET /messages/:id`: Get a message by ID.
+- `POST /messages`: Create a new message.
+- `DELETE /messages/:id`: Delete a message by ID.
 
 ### Users
 - `GET /users`: Get user details.

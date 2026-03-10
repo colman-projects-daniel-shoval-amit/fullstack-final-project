@@ -6,7 +6,7 @@ const options: swaggerJsdoc.Options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'assignment 2 API ',
+            title: 'Fullstack Final Project API ',
             version: '1.0.0',
             description: 'API for managing Users, Posts, and Comments with authentication',
             contact: {
@@ -40,22 +40,51 @@ const options: swaggerJsdoc.Options = {
                 },
                 Post: {
                     type: 'object',
-                    required: ['title', 'content', 'sender'],
+                    required: ['title', 'content', 'authorId'],
                     properties: {
                         _id: { type: 'string', example: '697a65f59de97b4c60af618d' },
                         text: { type: 'string', example: 'safdsafd First Post' },
                         image: { type: 'string', example: 'shoval.jpg' },
-                        sender: { type: 'string', example: '697a65f59de97b4c60af618d' },
+                        authorId: { type: 'string', example: '697a65f59de97b4c60af618d' },
                     },
                 },
                 Comment: {
                     type: 'object',
-                    required: ['postId', 'message', 'sender'],
+                    required: ['postId', 'message', 'authorId'],
                     properties: {
                         _id: { type: 'string', example: '697a9cd91b8ac38b2cde5352' },
                         postId: { type: 'string', example: '697a65f59de97b4c60af618d60d0fe4f5311236168a109cb' },
                         content: { type: 'string', example: 'Shoval post! :)' },
-                        sender: { type: 'string', example: '697a92d4725f95ca20e1300c' },
+                        authorId: { type: 'string', example: '697a92d4725f95ca20e1300c' },
+                    },
+                },
+                Like: {
+                    type: 'object',
+                    required: ['postId', 'userId'],
+                    properties: {
+                        _id: { type: 'string', example: '697a9cd91b8ac38b2cde5352' },
+                        postId: { type: 'string', example: '697a65f59de97b4c60af618d60d0fe4f5311236168a109cb' },
+                        userId: { type: 'string', example: '697a92d4725f95ca20e1300c' },
+                    },
+                },
+                Chat: {
+                    type: 'object',
+                    required: ['title', 'participants'],
+                    properties: {
+                        _id: { type: 'string', example: '697a9cd91b8ac38b2cde5352' },
+                        title: { type: 'string', example: 'Group Chat' },
+                        participants: { type: 'array', items: { type: 'string', example: '697a92d4725f95ca20e1300c' } },
+                    },
+                },
+                Message: {
+                    type: 'object',
+                    required: ['senderId', 'chatId', 'content'],
+                    properties: {
+                        _id: { type: 'string', example: '697a9cd91b8ac38b2cde5352' },
+                        senderId: { type: 'string', example: '697a92d4725f95ca20e1300c' },
+                        chatId: { type: 'string', example: '697a65f59de97b4c60af618d60d0fe4f5311236168a109cb' },
+                        content: { type: 'string', example: 'Hello everyone!' },
+                        timestamp: { type: 'string', format: 'date-time' },
                     },
                 },
             },
