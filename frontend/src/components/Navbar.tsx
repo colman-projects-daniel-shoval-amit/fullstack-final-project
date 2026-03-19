@@ -25,9 +25,15 @@ export function Navbar({ children }: { children?: ReactNode }) {
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link to="/" className="text-xl font-bold tracking-tight">
-          Inkwell
+      <div className="w-full px-10 h-14 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 select-none group">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 3 C16 3, 8 13.5, 8 19.5 a8 8 0 0 0 16 0 C24 13.5, 16 3, 16 3 Z" fill="currentColor" className="text-foreground"/>
+            <ellipse cx="13" cy="19" rx="2" ry="3" fill="white" opacity="0.25" transform="rotate(-20 13 19)"/>
+          </svg>
+          <span className="text-xl font-bold tracking-tight">
+            <span className="text-foreground">Ink</span><span className="text-muted-foreground font-light">Wall</span>
+          </span>
         </Link>
         <div className="flex items-center gap-3">
           {children ?? (
