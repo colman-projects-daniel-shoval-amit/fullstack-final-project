@@ -7,6 +7,7 @@ import { CommentItem } from '@/components/CommentItem';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
+import { AuthorBadge } from '@/components/AuthorBadge';
 import { postService } from '@/services/postService';
 import { commentService } from '@/services/commentService';
 import { likeService } from '@/services/likeService';
@@ -174,9 +175,7 @@ export function PostViewPage() {
           <div className="mb-6">
             <h1 className="text-4xl font-bold leading-tight mb-4">{post.title}</h1>
             <div className="flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">
-                {authorEmail} · {date}
-              </p>
+              <AuthorBadge email={authorEmail} date={date} showFollow isCurrentUser={isAuthor} />
               {isAuthor && (
                 <Button asChild variant="outline" size="sm">
                   <Link to={`/posts/${post._id}/edit`}>

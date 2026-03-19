@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart, MessageCircle } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { AuthorBadge } from '@/components/AuthorBadge';
 import { getDateFromId, resolveImageUrl } from '@/lib/utils';
 import type { Post } from '@/types';
 
@@ -28,10 +29,8 @@ export function PostCard({ post, authorEmail }: PostCardProps) {
           />
         )}
         <CardHeader className="flex-none">
-          <CardDescription className="text-xs">
-            {authorEmail} · {date}
-          </CardDescription>
-          <CardTitle className="text-lg leading-snug line-clamp-2">
+          <AuthorBadge email={authorEmail} date={date} />
+          <CardTitle className="text-lg leading-snug line-clamp-2 mt-2">
             {post.title}
           </CardTitle>
         </CardHeader>

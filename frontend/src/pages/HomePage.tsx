@@ -4,6 +4,7 @@ import { Heart, MessageCircle } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { PostCard } from '@/components/PostCard';
 import { PostCardSkeleton } from '@/components/PostCardSkeleton';
+import { AuthorBadge } from '@/components/AuthorBadge';
 import { postService } from '@/services/postService';
 import { getDateFromId, resolveImageUrl } from '@/lib/utils';
 import type { Post } from '@/types';
@@ -135,8 +136,8 @@ function FeaturedPostCard({ post, authorEmail }: { post: Post; authorEmail: stri
         />
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-muted-foreground mb-1">{authorEmail} · {date}</p>
-        <h3 className="text-lg font-bold leading-snug mb-2 group-hover:underline line-clamp-2">
+        <AuthorBadge email={authorEmail} date={date} />
+        <h3 className="text-lg font-bold leading-snug mt-2 mb-2 group-hover:underline line-clamp-2">
           {post.title}
         </h3>
         <p className="text-sm text-muted-foreground line-clamp-2">{excerpt}</p>
