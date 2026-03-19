@@ -1,6 +1,13 @@
 import { authenticate } from "../middlewares/authMiddleware";
 import authController from "../controllers/authController";
-import express from "express";
+import express, { RequestHandler } from "express";
+import passport from "config/passport";
+import { googleCallback } from "controllers/googleAuthController";
+import { config } from "../config/config";
+
+const googleAuth = passport.authenticate('google', { scope: ['profile', 'email'], session: false }) as RequestHandler;
+const googleAuthCallback = passport.authenticate('google', { failureRedirect: `${config.FRONTEND_URL}/auth?error=google_failed`, session: false }) as RequestHandler;
+
 
 const authRouter = express.Router();
 
@@ -129,5 +136,29 @@ authRouter.post("/logout", authenticate, authController.logout);
  *         description: Invalid refresh token
  */
 authRouter.post("/refresh", authController.refreshToken);
+
+/**
+ * @swagger
+ * /auth/google:
+ *   get:
+ *     summary: Initiate Google OAuth login
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirects to Google consent screen
+ */
+authRouter.get('/google', googleAuth);
+
+/**
+ * @swagger
+ * /auth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirects to frontend with tokens
+ */
+authRouter.get('/google/callback', googleAuthCallback, googleCallback);
 
 export default authRouter;
