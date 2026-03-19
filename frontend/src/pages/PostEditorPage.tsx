@@ -284,6 +284,8 @@ export function PostEditorPage() {
               style={{ top: selectionToolbar.top, left: selectionToolbar.left }}
               onMouseDown={e => e.preventDefault()}
             >
+              <SelectionButton icon={<span className="flex items-end leading-none gap-[1px]"><span className="text-[13px] font-bold">T</span><span className="text-[9px] font-bold mb-[1px]">T</span></span>} label="Heading" active={editor.isActive('heading', { level: 2 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); setSelectionToolbar(null); }} />
+              <div className="w-px h-4 bg-white/20 mx-0.5" />
               <SelectionButton icon={<Bold className="w-3.5 h-3.5" />} label="Bold" active={editor.isActive('bold')} onClick={() => { editor.chain().focus().toggleBold().run(); setSelectionToolbar(null); }} />
               <SelectionButton icon={<Italic className="w-3.5 h-3.5" />} label="Italic" active={editor.isActive('italic')} onClick={() => { editor.chain().focus().toggleItalic().run(); setSelectionToolbar(null); }} />
               <SelectionButton icon={<Code className="w-3.5 h-3.5" />} label="Code" active={editor.isActive('code')} onClick={() => { editor.chain().focus().toggleCode().run(); setSelectionToolbar(null); }} />
