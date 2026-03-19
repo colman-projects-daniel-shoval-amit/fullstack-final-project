@@ -1,11 +1,41 @@
 import PostModel from "../models/postModel";
 import baseController from "./baseController";
 import { AuthRequest } from "../middlewares/authMiddleware";
-import { Response } from "express";
+import { Request, Response } from "express";
 
 class PostController extends baseController {
     constructor() {
         super(PostModel);
+    }
+
+    async get(req: Request, res: Response) {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const filter = { ...req.query };
+        delete filter.page;
+        delete filter.limit;
+        try {
+            const data = await PostModel.find(filter)
+                .populate('authorId', 'email')
+                .skip((page - 1) * limit)
+                .limit(limit);
+            res.json(data);
+        } catch (error) {
+            this.handleError(res, error);
+        }
+    }
+
+    async getById(req: Request, res: Response) {
+        const id = req.params.id;
+        try {
+            const data = await PostModel.findById(id).populate('authorId', 'email');
+            if (!data) {
+                return res.status(404).json({ error: "Post not found" });
+            }
+            res.json(data);
+        } catch (error) {
+            this.handleError(res, error);
+        }
     }
 
     async create(req: AuthRequest, res: Response) {

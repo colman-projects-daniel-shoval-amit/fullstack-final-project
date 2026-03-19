@@ -27,6 +27,14 @@ const userSchema = new Schema<IUser>({
         type: [String],
         default: [],
     },
+}, {
+    toJSON: {
+        transform(_doc, ret) {
+            delete ret.password;
+            delete ret.refreshTokens;
+            return ret;
+        },
+    },
 });
 
 const UserModel = mongoose.model<IUser>('User', userSchema);
