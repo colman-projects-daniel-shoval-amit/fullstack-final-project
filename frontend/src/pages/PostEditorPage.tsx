@@ -10,7 +10,7 @@ import { Markdown } from 'tiptap-markdown';
 import {
   Bold, Italic, Link as LinkIcon, ImagePlus, X, Loader2, Table, Code, Plus,
 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
+import { PageLayout } from '@/components/PageLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { postService } from '@/services/postService';
@@ -211,40 +211,39 @@ export function PostEditorPage() {
   const displayCover = coverImagePreview ?? resolveImageUrl(coverImage) ?? null;
   const busy = isSubmitting || isUploadingCover || isInsertingImage;
 
+  const editorNavbar = (
+    <div className="flex items-center gap-3">
+      <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+        <span>Markdown</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={rawMode}
+          onClick={() => setRawMode(v => !v)}
+          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${rawMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+        >
+          <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${rawMode ? 'translate-x-4' : 'translate-x-1'}`} />
+        </button>
+      </label>
+      <Button size="sm" onClick={handleSubmit} disabled={busy}>
+        {busy && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
+        {isUploadingCover ? 'Uploading…' : isEditMode ? 'Save' : 'Publish'}
+      </Button>
+    </div>
+  );
+
   if (isLoadingPost) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
+      <PageLayout navbarChildren={editorNavbar}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
-            <span>Markdown</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={rawMode}
-              onClick={() => setRawMode(v => !v)}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${rawMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}
-            >
-              <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${rawMode ? 'translate-x-4' : 'translate-x-1'}`} />
-            </button>
-          </label>
-          <Button size="sm" onClick={handleSubmit} disabled={busy}>
-            {busy && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
-            {isUploadingCover ? 'Uploading…' : isEditMode ? 'Save' : 'Publish'}
-          </Button>
-        </div>
-      </Navbar>
-
+    <PageLayout navbarChildren={editorNavbar}>
       <main className="max-w-3xl mx-auto px-4 pt-12 pb-32">
         {displayCover ? (
           <div className="relative group mb-8">
@@ -349,7 +348,7 @@ export function PostEditorPage() {
           <Button variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
         </div>
       </main>
-    </div>
+    </PageLayout>
   );
 }
 

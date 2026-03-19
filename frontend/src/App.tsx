@@ -5,6 +5,9 @@ import { GoogleCallbackPage } from '@/pages/GoogleCallbackPage';
 import { HomePage } from '@/pages/HomePage';
 import { PostViewPage } from '@/pages/PostViewPage';
 import { PostEditorPage } from '@/pages/PostEditorPage';
+import { ProfilePage } from '@/pages/ProfilePage';
+import { MyPostsPage } from '@/pages/MyPostsPage';
+import { FollowingPage } from '@/pages/FollowingPage';
 import { AuthGuard } from '@/components/AuthGuard';
 
 function App() {
@@ -19,6 +22,9 @@ function App() {
         <Route path="/posts/new" element={<PostEditorPage />} />
         <Route path="/posts/:id" element={<PostViewPage />} />
         <Route path="/posts/:id/edit" element={<PostEditorPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/my-posts" element={<MyPostsPage />} />
+        <Route path="/following" element={<FollowingPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />

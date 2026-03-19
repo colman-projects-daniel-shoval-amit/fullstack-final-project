@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Heart, Edit2, Loader2 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
+import { PageLayout } from '@/components/PageLayout';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { CommentItem } from '@/components/CommentItem';
 import { Button } from '@/components/ui/button';
@@ -147,12 +147,11 @@ export function PostViewPage() {
 
   if (isLoadingPost) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
+      <PageLayout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -168,8 +167,7 @@ export function PostViewPage() {
   const isAuthor = userId === postAuthorId;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <PageLayout>
       <main className="max-w-3xl mx-auto px-4 py-10">
         <article>
           <div className="mb-6">
@@ -263,6 +261,6 @@ export function PostViewPage() {
           </div>
         </section>
       </main>
-    </div>
+    </PageLayout>
   );
 }

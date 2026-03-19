@@ -2,8 +2,8 @@ import api from '@/services/axiosInstance';
 import type { Post } from '@/types';
 
 export const postService = {
-  async getPosts(page: number, limit = 10): Promise<Post[]> {
-    const res = await api.get<Post[]>('/posts', { params: { page, limit } });
+  async getPosts(page: number, limit = 10, filter?: Record<string, string>): Promise<Post[]> {
+    const res = await api.get<Post[]>('/posts', { params: { page, limit, ...filter } });
     return res.data;
   },
 

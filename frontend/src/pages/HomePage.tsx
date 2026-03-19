@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, MessageCircle } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
+import { PageLayout } from '@/components/PageLayout';
 import { PostCard } from '@/components/PostCard';
 import { PostCardSkeleton } from '@/components/PostCardSkeleton';
 import { AuthorBadge } from '@/components/AuthorBadge';
@@ -62,9 +62,7 @@ export function HomePage() {
   const gridPosts = posts.slice(3);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-
+    <PageLayout>
       <main className="max-w-6xl mx-auto px-4 py-10">
         {featuredPosts.length > 0 && (
           <section className="mb-12">
@@ -111,7 +109,7 @@ export function HomePage() {
 
         <div ref={observerRef} className="h-4 mt-4" />
       </main>
-    </div>
+    </PageLayout>
   );
 }
 
