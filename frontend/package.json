@@ -11,14 +11,26 @@
   "dependencies": {
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tiptap/core": "^3.20.4",
+    "@tiptap/extension-bubble-menu": "^3.20.4",
+    "@tiptap/extension-image": "^3.20.4",
+    "@tiptap/extension-link": "^3.20.4",
+    "@tiptap/extension-placeholder": "^3.20.4",
+    "@tiptap/extension-typography": "^3.20.4",
+    "@tiptap/react": "^3.20.4",
+    "@tiptap/starter-kit": "^3.20.4",
+    "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "axios": "^1.7.9",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.28.0",
-    "tailwind-merge": "^2.5.5"
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^2.5.5",
+    "tiptap-markdown": "^0.9.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

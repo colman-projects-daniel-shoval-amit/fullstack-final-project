@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthPage } from '@/pages/AuthPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { GoogleCallbackPage } from '@/pages/GoogleCallbackPage';
+import { HomePage } from '@/pages/HomePage';
+import { PostViewPage } from '@/pages/PostViewPage';
+import { PostEditorPage } from '@/pages/PostEditorPage';
 import { AuthGuard } from '@/components/AuthGuard';
 
 function App() {
@@ -12,7 +15,10 @@ function App() {
       <Route path="/not-found" element={<NotFoundPage />} />
 
       <Route element={<AuthGuard />}>
-        <Route path="/" element={<div>Home (protected)</div>} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/posts/new" element={<PostEditorPage />} />
+        <Route path="/posts/:id" element={<PostViewPage />} />
+        <Route path="/posts/:id/edit" element={<PostEditorPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />
