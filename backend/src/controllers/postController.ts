@@ -13,7 +13,7 @@ class PostController extends baseController {
         if (!userId) {
             return;
         }
-        req.body.sender = userId;
+        req.body.authorId = userId;
         super.create(req, res);
     }
 
@@ -26,7 +26,7 @@ class PostController extends baseController {
                 res.status(404).json({ error: "Post not found" });
                 return;
             }
-            if (post.sender !== userId) {
+            if (String(post.authorId) !== userId) {
                 res.status(403).json({ error: "Unauthorized" });
                 return;
             }

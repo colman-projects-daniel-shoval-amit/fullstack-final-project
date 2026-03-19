@@ -18,7 +18,7 @@ class CommentController extends baseController {
             if (!comment) {
                 return res.status(404).json({ error: "Comment not found" });
             }
-            if (comment.sender !== userId) {
+            if (String(comment.authorId) !== userId) {
                 return res.status(403).json({ error: "Unauthorized" });
             }
             return super.delete(req, res);
@@ -29,7 +29,7 @@ class CommentController extends baseController {
 
     async create(req: AuthRequest, res: Response) {
         const postId = req.body.postId;
-        req.body.sender = req.user?._id;
+        req.body.authorId = req.user?._id;
         try {
             const post = await PostModel.findById(postId);
             if (!post) {
@@ -51,7 +51,7 @@ class CommentController extends baseController {
                 res.status(404).json({ error: "Comment not found" });
                 return;
             }
-            if (comment.sender !== userId) {
+            if (String(comment.authorId) !== userId) {
                 res.status(403).json({ error: "Unauthorized" });
                 return;
             }

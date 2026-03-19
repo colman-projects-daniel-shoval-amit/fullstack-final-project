@@ -16,6 +16,21 @@ const userRouter = express.Router();
  *   get:
  *     summary: Returns the list of all the users
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The number of items per page
  *     responses:
  *       200:
  *         description: The list of the users
