@@ -32,13 +32,13 @@ export function PostEditorPage() {
   const [isLoadingPost, setIsLoadingPost] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [isInsertingImage, setIsInsertingImage] = useState(false);
+  const [isInsertingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plusTop, setPlusTop] = useState<number | null>(null);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number } | null>(null);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const coverFileRef = useRef<HTMLInputElement>(null);
   const inlineImageRef = useRef<HTMLInputElement>(null);
@@ -99,6 +99,13 @@ export function PostEditorPage() {
       }
     },
   });
+
+  useEffect(() => {
+    if (titleRef.current) {
+      titleRef.current.style.height = 'auto';
+      titleRef.current.style.height = titleRef.current.scrollHeight + 'px';
+    }
+  }, [title]);
 
   useEffect(() => {
     if (!isEditMode || !id) return;
@@ -268,12 +275,13 @@ export function PostEditorPage() {
         )}
         <input ref={coverFileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={handleCoverFileChange} />
 
-        <input
-          type="text"
+        <textarea
+          ref={titleRef}
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Title"
-          className="w-full text-4xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/40 mb-8 focus:ring-0"
+          rows={1}
+          className="w-full text-4xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/40 mb-8 focus:ring-0 resize-none overflow-hidden leading-tight"
         />
 
         <div ref={wrapperRef} className="relative pl-10">
