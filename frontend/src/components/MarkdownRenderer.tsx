@@ -3,10 +3,10 @@ import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 
 const components: Components = {
-  h1: ({ children }) => <h1 className="text-3xl font-bold mt-8 mb-4">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-2xl font-bold mt-7 mb-3">{children}</h2>,
-  h3: ({ children }) => <h3 className="text-xl font-semibold mt-6 mb-2">{children}</h3>,
-  p: ({ children }) => <p className="mb-4 leading-7">{children}</p>,
+  h1: ({ children }) => <h1 className="text-3xl font-bold mt-8 mb-4 break-words">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-2xl font-bold mt-7 mb-3 break-words">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-xl font-semibold mt-6 mb-2 break-words">{children}</h3>,
+  p: ({ children }) => <p className="mb-4 leading-7 break-words">{children}</p>,
   ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
   ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
   li: ({ children }) => <li className="leading-7">{children}</li>,
@@ -54,7 +54,7 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
-    <div className="prose-custom text-foreground">
+    <div className="prose-custom text-foreground w-full overflow-x-auto break-words">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {content}
       </ReactMarkdown>

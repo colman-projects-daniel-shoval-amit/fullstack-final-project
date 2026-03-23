@@ -333,7 +333,7 @@ export function PostEditorPage() {
               }}
               placeholder="Write your post in markdown…"
               className="w-full min-h-[60vh] bg-transparent border-none outline-none text-base leading-7 resize-none focus:ring-0 placeholder:text-muted-foreground/40"
-              style={{ overflow: 'hidden' }}
+              style={{ overflow: 'auto' }}
             />
           ) : (
             <EditorContent editor={editor} />
