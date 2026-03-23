@@ -11,6 +11,7 @@ import authRouter from "./routes/authRoute";
 import likeRouter from "./routes/likeRoute";
 import chatRouter from "./routes/chatRoute";
 import messageRouter from "./routes/messageRoute";
+import topicRouter from "./routes/topicRoute";
 import cors from "cors";
 import { authenticate } from "./middlewares/authMiddleware";
 import { uploadSingle } from "./middlewares/uploadMiddleware";
@@ -47,6 +48,7 @@ app.use('/users', userRouter);
 app.use('/likes', likeRouter);
 app.use('/chats', chatRouter);
 app.use('/messages', messageRouter);
+app.use('/topics', topicRouter);
 
 const db = mongoose.connection;
 db.on("error", (error) => console.error(error));
