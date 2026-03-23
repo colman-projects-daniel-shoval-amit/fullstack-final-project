@@ -171,7 +171,7 @@ export function PostViewPage() {
       <main className="max-w-3xl mx-auto px-4 py-10">
         <article>
           <div className="mb-6">
-            <h1 className="text-4xl font-bold leading-tight mb-4">{post.title}</h1>
+            <h1 className="text-4xl font-bold leading-tight mb-4 break-words">{post.title}</h1>
             <div className="flex items-center justify-between">
               <AuthorBadge email={authorEmail} date={date} showFollow isCurrentUser={isAuthor} />
               {isAuthor && (
