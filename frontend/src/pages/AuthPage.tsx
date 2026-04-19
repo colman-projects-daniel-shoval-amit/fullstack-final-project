@@ -52,7 +52,7 @@ export function AuthPage() {
     setError(null);
     try {
       await register(email, password);
-      navigate('/');
+      navigate('/onboarding');
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
