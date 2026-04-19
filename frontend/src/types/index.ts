@@ -26,3 +26,16 @@ export interface User {
   _id: string;
   email: string;
 }
+
+export interface UserProfile {
+  _id: string;
+  email: string;
+  interests: { _id: string; name: string; slug: string }[];
+  following: User[];
+  followers: User[];
+}
+
+export interface RecommendedUser {
+  _id: string;
+  email: string;
+}
