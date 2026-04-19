@@ -41,6 +41,12 @@ const userRouter = express.Router();
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
+userRouter.get("/me", (userController as any).getMe.bind(userController));
+userRouter.patch("/me", (userController as any).updateMe.bind(userController));
+userRouter.get("/recommended", (userController as any).getRecommended.bind(userController));
+userRouter.post("/:id/follow", (userController as any).follow.bind(userController));
+userRouter.delete("/:id/follow", (userController as any).unfollow.bind(userController));
+
 userRouter.get("/", userController.get.bind(userController));
 
 /**
