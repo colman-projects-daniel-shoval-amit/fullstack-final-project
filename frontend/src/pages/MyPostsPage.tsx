@@ -16,7 +16,7 @@ export function MyPostsPage() {
 
   useEffect(() => {
     if (!userId) return;
-    postService.getPosts(1, 100, { authorId: userId })
+    postService.getPostsByAuthor(userId)
       .then(setPosts)
       .finally(() => setIsLoading(false));
   }, [userId]);

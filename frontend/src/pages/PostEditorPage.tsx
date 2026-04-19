@@ -12,8 +12,13 @@ import {
 } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
 import { postService } from '@/services/postService';
+import { topicService } from '@/services/topicService';
+import type { Topic } from '@/services/topicService';
 import { resolveImageUrl } from '@/lib/utils';
 
 export function PostEditorPage() {
@@ -34,6 +39,10 @@ export function PostEditorPage() {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isInsertingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [topicsDialogOpen, setTopicsDialogOpen] = useState(false);
+  const [allTopics, setAllTopics] = useState<Topic[]>([]);
+  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
   const [plusTop, setPlusTop] = useState<number | null>(null);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number } | null>(null);
@@ -108,6 +117,10 @@ export function PostEditorPage() {
   }, [title]);
 
   useEffect(() => {
+    topicService.getTopics().then(setAllTopics);
+  }, []);
+
+  useEffect(() => {
     if (!isEditMode || !id) return;
     setIsLoadingPost(true);
     postService.getPostById(id).then(post => {
@@ -117,6 +130,7 @@ export function PostEditorPage() {
       setText(post.text);
       if (editor) editor.commands.setContent(post.text);
       setCoverImage(post.image ?? '');
+      setSelectedTopicIds(post.topics ?? []);
       setIsLoadingPost(false);
     }).catch(() => navigate('/'));
   }, [id, isEditMode, userId, navigate, editor]);
@@ -163,11 +177,17 @@ export function PostEditorPage() {
     if (coverFileRef.current) coverFileRef.current.value = '';
   }
 
-  async function handleSubmit() {
-    let content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
+  function handleSubmit() {
+    const content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
     if (!title.trim()) { setError('Title is required.'); return; }
     if (!content.trim()) { setError('Content is required.'); return; }
     setError(null);
+    setTopicsDialogOpen(true);
+  }
+
+  async function handleConfirmPublish() {
+    setTopicsDialogOpen(false);
+    let content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
     setIsSubmitting(true);
     try {
       if (pendingInlineFiles.current.size > 0) {
@@ -199,7 +219,12 @@ export function PostEditorPage() {
         finalImage = await postService.uploadImage(coverImageFile);
         setIsUploadingCover(false);
       }
-      const payload = { title: title.trim(), text: content.trim(), ...(finalImage ? { image: finalImage } : {}) };
+      const payload = {
+        title: title.trim(),
+        text: content.trim(),
+        ...(finalImage ? { image: finalImage } : {}),
+        topics: selectedTopicIds,
+      };
       if (isEditMode && id) {
         await postService.updatePost(id, payload);
         navigate(`/posts/${id}`);
@@ -356,6 +381,41 @@ export function PostEditorPage() {
           <Button variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
         </div>
       </main>
+
+      <Dialog open={topicsDialogOpen} onOpenChange={setTopicsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose topics</DialogTitle>
+            <DialogDescription>Select the topics that best describe your post.</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto py-1">
+            {allTopics.map(topic => {
+              const active = selectedTopicIds.includes(topic._id);
+              return (
+                <button
+                  key={topic._id}
+                  type="button"
+                  onClick={() => setSelectedTopicIds(prev =>
+                    active ? prev.filter(id => id !== topic._id) : [...prev, topic._id]
+                  )}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                    active ? 'bg-foreground text-background' : 'bg-muted text-foreground hover:bg-muted/70'
+                  }`}
+                >
+                  {topic.name}
+                </button>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTopicsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleConfirmPublish} disabled={busy}>
+              {busy && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />}
+              {isEditMode ? 'Save' : 'Publish'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 }

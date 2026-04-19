@@ -173,7 +173,7 @@ export function PostViewPage() {
           <div className="mb-6">
             <h1 className="text-4xl font-bold leading-tight mb-4 break-words">{post.title}</h1>
             <div className="flex items-center justify-between">
-              <AuthorBadge email={authorEmail} date={date} showFollow isCurrentUser={isAuthor} />
+              <AuthorBadge email={authorEmail} date={date} authorId={postAuthorId} showFollow isCurrentUser={isAuthor} />
               {isAuthor && (
                 <Button asChild variant="outline" size="sm">
                   <Link to={`/posts/${post._id}/edit`}>
