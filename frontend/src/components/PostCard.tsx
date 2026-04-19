@@ -8,9 +8,10 @@ import type { Post } from '@/types';
 interface PostCardProps {
   post: Post;
   authorEmail: string;
+  authorId?: string;
 }
 
-export function PostCard({ post, authorEmail }: PostCardProps) {
+export function PostCard({ post, authorEmail, authorId }: PostCardProps) {
   const excerpt = post.text.length > 150 ? post.text.slice(0, 150) + '…' : post.text;
   const date = getDateFromId(post._id).toLocaleDateString('en-US', {
     month: 'short',
@@ -29,7 +30,7 @@ export function PostCard({ post, authorEmail }: PostCardProps) {
           />
         )}
         <CardHeader className="flex-none">
-          <AuthorBadge email={authorEmail} date={date} />
+          <AuthorBadge email={authorEmail} date={date} authorId={authorId} />
           <CardTitle className="text-lg leading-snug line-clamp-2 mt-2">
             {post.title}
           </CardTitle>
