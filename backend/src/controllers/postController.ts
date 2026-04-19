@@ -11,9 +11,17 @@ class PostController extends baseController {
     async get(req: Request, res: Response) {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
-        const filter = { ...req.query };
-        delete filter.page;
-        delete filter.limit;
+        const filter: Record<string, unknown> = {};
+        const rawTopics = req.query.topics;
+        if (rawTopics) {
+            const ids = Array.isArray(rawTopics) ? rawTopics : [rawTopics];
+            filter.topics = { $in: ids };
+        }
+        const rawAuthorId = req.query.authorId;
+        if (rawAuthorId) {
+            const ids = Array.isArray(rawAuthorId) ? rawAuthorId : [rawAuthorId];
+            filter.authorId = ids.length === 1 ? ids[0] : { $in: ids };
+        }
         try {
             const data = await PostModel.find(filter)
                 .populate('authorId', 'email')
