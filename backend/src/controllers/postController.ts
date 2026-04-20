@@ -2,6 +2,8 @@ import PostModel from "../models/postModel";
 import baseController from "./baseController";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Request, Response } from "express";
+import PostChunkModel from "../models/postChunkModel";
+import { getEmbedding } from "../services/embeddingService";
 
 class PostController extends baseController {
     constructor() {
@@ -46,16 +48,56 @@ class PostController extends baseController {
         }
     }
 
-    async create(req: AuthRequest, res: Response) {
-        const userId = req.user?._id;
+    async create(req: Request, res: Response): Promise<void>  {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?._id;
         if (!userId) {
+            res.status(401).send();
             return;
         }
-        req.body.authorId = userId;
-        super.create(req, res);
+        try {
+          const post = await PostModel.create({
+            ...req.body,
+            authorId: userId
+          });
+      
+          const chunks = this.splitArticle(post.text);
+
+      
+
+          const chunkDocs = await Promise.all(
+            chunks.map(async (chunk) => {
+              const embedding = await getEmbedding(chunk);
+              return {
+                postId: post._id,
+                content: chunk,
+                embedding
+              };
+            })
+          );
+
+          await PostChunkModel.insertMany(chunkDocs);
+      
+          res.status(201).json(post);
+      
+        } catch (error) {
+          this.handleError(res, error);
+        }
+      }
+    
+    splitArticle(text: string, size = 500, overlap = 100) {
+        const chunks: string[] = [];
+      
+        for (let i = 0; i < text.length; i += size - overlap) {
+          chunks.push(text.slice(i, i + size));
+        }
+      
+        return chunks;
     }
 
+    
     async put(req: AuthRequest, res: Response) {
+        const authReq = req as AuthRequest;
         const id = req.params.id;
         const userId = req.user?._id;
         try {
@@ -68,9 +110,36 @@ class PostController extends baseController {
                 res.status(403).json({ error: "Unauthorized" });
                 return;
             }
-            super.put(req, res);
+            post.text = req.body.text ?? post.text;
+            post.title = req.body.title ?? post.title;
+            post.image = req.body.image ?? post.image;
+            post.topics = req.body.topics ?? post.topics;
+
+            await post.save();
+            if (req.body.text) {
+                await PostChunkModel.deleteMany({ postId: post._id });
+        
+                const chunks = this.splitArticle(post.text);
+        
+                const chunkDocs = await Promise.all(
+                chunks.map(async (chunk) => {
+                    const embedding = await getEmbedding(chunk);
+                    return {
+                    postId: post._id,
+                    content: chunk,
+                    embedding
+                    };
+                })
+                );
+        
+                // 5. save
+                await PostChunkModel.insertMany(chunkDocs);
+            }
+            res.json(post);
+            return;
         } catch (error) {
             this.handleError(res, error);
+            return;
         }
     }
 }

@@ -11,6 +11,7 @@ import { FollowingPage } from '@/pages/FollowingPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useUser } from '@/context/UserContext';
+import AIChatWidget from "./components/AIChatWidget";
 
 function OnboardingGuard() {
   const { profile, isLoadingProfile } = useUser();
@@ -21,6 +22,7 @@ function OnboardingGuard() {
 
 function App() {
   return (
+    <div>
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/callback" element={<GoogleCallbackPage />} />
@@ -39,6 +41,8 @@ function App() {
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />
     </Routes>
+      <AIChatWidget />
+    </div>
   );
 }
 
