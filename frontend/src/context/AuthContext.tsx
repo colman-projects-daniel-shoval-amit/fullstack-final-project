@@ -8,11 +8,22 @@ interface AuthState {
 
 interface AuthContextValue {
   token: string | null;
+  userId: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   loginWithTokens: (token: string, refreshToken: string) => void;
   logout: () => Promise<void>;
+}
+
+function getUserIdFromToken(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload._id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -59,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await api.post('/auth/logout', { refreshToken: rt });
       } catch {
-        // clear locally regardless
       }
     }
     clear();
@@ -68,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       token: auth.token,
+      userId: getUserIdFromToken(auth.token),
       isAuthenticated: !!auth.token,
       login,
       register,

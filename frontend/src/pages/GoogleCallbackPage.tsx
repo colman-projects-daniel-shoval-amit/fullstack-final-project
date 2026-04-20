@@ -13,7 +13,7 @@ export function GoogleCallbackPage() {
 
     if (token && refreshToken) {
       loginWithTokens(token, refreshToken);
-      navigate('/', { replace: true });
+      navigate('/onboarding', { replace: true });
     } else {
       navigate('/auth?error=google_failed', { replace: true });
     }
