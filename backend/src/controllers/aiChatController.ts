@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import PostChunkModel from "../models/postChunkModel";
 import { getEmbedding,generateAnswer } from "../services/embeddingService";
+import PostModel from "../models/postModel";
 
-// 🔹 cosine similarity
 function cosineSimilarity(a: number[], b: number[]) {
   let dot = 0;
   let magA = 0;
@@ -27,10 +27,8 @@ class AIChatController {
     }
 
     try {
-      // 1. embed question
       const queryEmbedding = await getEmbedding(question);
 
-      // 2. fetch chunks (limit for performance)
       const chunks = await PostChunkModel.find().limit(200);
 
       if (!chunks.length) {
@@ -38,19 +36,18 @@ class AIChatController {
         return;
       }
 
-      // 3. score chunks
       const scored = chunks.map((chunk) => ({
+        postId: chunk.postId,
         content: chunk.content,
         score: cosineSimilarity(queryEmbedding, chunk.embedding),
       }));
 
-      // 4. sort by similarity
       scored.sort((a, b) => b.score - a.score);
 
-      // 5. filter weak matches (important)
       const topChunks = scored
-        .filter((c) => c.score > 0.6) // threshold tweakable
-        .slice(0, 5);
+      .sort((a, b) => b.score - a.score)
+      .filter((c) => c.score > 0.6)
+      .slice(0, 5);
 
       if (!topChunks.length) {
         res.json({
@@ -59,11 +56,21 @@ class AIChatController {
         return;
       }
 
-      const context = topChunks
-        .map((c) => c.content)
-        .join("\n")
-        .slice(0, 4000); // prevent token overflow
+      const topPostIds = [
+          ...new Set(topChunks.map((c) => String(c.postId))),
+          ];
+          
+          const posts = await PostModel.find({
+              _id: { $in: topPostIds },
+            });
 
+      const context = posts
+  .map(
+    (p) =>
+      `Title: ${p.title}\n${p.text}`
+  )
+  .join("\n\n---\n\n")
+  .slice(0, 4000);
       const answer = await generateAnswer(question, context);
 
       res.json({ answer });

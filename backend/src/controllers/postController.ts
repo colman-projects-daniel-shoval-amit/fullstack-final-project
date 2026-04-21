@@ -132,7 +132,6 @@ class PostController extends baseController {
                 })
                 );
         
-                // 5. save
                 await PostChunkModel.insertMany(chunkDocs);
             }
             res.json(post);

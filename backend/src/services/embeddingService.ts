@@ -3,12 +3,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const embeddingModel = genAI.getGenerativeModel({
-  // FIX: Change text-embedding-004 to gemini-embedding-001
   model: "gemini-embedding-001", 
 });
 
 const chatModel = genAI.getGenerativeModel({
-  // 2026 Best Practice: Use the latest Flash model for speed/cost
   model: "gemini-2.5-flash", 
 });
 
