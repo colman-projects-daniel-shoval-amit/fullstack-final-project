@@ -6,7 +6,7 @@ export interface Post {
   image?: string;
   commentsCount: number;
   likesCount: number;
-  topics?: string[];
+  topics?: (string | { _id: string; name: string })[];
   summary?: string;
 }
 

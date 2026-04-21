@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Heart, Edit2, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { Heart, Edit2, Loader2, Sparkles, Trash2, X } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { CommentItem } from '@/components/CommentItem';
@@ -42,6 +42,7 @@ export function PostViewPage() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -212,13 +213,28 @@ export function PostViewPage() {
             <img
               src={resolveImageUrl(post.image)}
               alt={post.title}
-              className="w-full rounded-xl mb-8 max-h-96 object-cover"
+              className="w-full rounded-xl mb-8 max-h-96 object-cover cursor-zoom-in"
+              onClick={() => setLightboxSrc(resolveImageUrl(post.image!)!)}
             />
           )}
 
           <MarkdownRenderer content={post.text} />
 
-          <div className="mt-10 flex items-center gap-3">
+          {post.topics && post.topics.length > 0 && (
+            <div className="mt-10 flex flex-wrap gap-2">
+              {post.topics.map(t => {
+                const id = typeof t === 'string' ? t : t._id;
+                const name = typeof t === 'string' ? t : t.name;
+                return (
+                  <span key={id} className="px-3 py-1 rounded-full text-sm bg-muted text-foreground">
+                    {name}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-4 flex items-center gap-3">
             <button
               onClick={handleLikeToggle}
               disabled={isTogglingLike}
@@ -315,6 +331,26 @@ export function PostViewPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxSrc}
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
     </PageLayout>
   );
 }
