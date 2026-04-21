@@ -42,6 +42,10 @@ export const postService = {
     return res.data;
   },
 
+  async deletePost(id: string): Promise<void> {
+    await api.delete(`/posts/${id}`);
+  },
+
   async uploadImage(file: File): Promise<string> {
     const form = new FormData();
     form.append('image', file);
