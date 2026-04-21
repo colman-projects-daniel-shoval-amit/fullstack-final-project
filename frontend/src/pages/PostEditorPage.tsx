@@ -5,9 +5,13 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
 import Image from '@tiptap/extension-image';
+import { Table as TableExtension } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import { Markdown } from 'tiptap-markdown';
 import {
-  Bold, Italic, Link as LinkIcon, ImagePlus, X, Loader2, Table, Code, Plus, Sparkles,
+  Bold, Italic, Link as LinkIcon, ImagePlus, X, Loader2, Table, Code, Plus, Sparkles, Minus, Strikethrough, Quote,
 } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -52,6 +56,8 @@ export function PostEditorPage() {
   const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number } | null>(null);
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [linkInput, setLinkInput] = useState('');
+  const [tablePickerOpen, setTablePickerOpen] = useState(false);
+  const [tableHover, setTableHover] = useState<{ rows: number; cols: number } | null>(null);
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -65,6 +71,10 @@ export function PostEditorPage() {
       Placeholder.configure({ placeholder: 'Tell your story…' }),
       Typography,
       Image.configure({ inline: false }),
+      TableExtension.configure({ resizable: false }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Markdown.configure({ escapePatterns: false, linkify: true }),
     ],
     editorProps: {
@@ -409,12 +419,16 @@ export function PostEditorPage() {
                 </form>
               ) : (
                 <>
-                  <SelectionButton icon={<span className="flex items-end leading-none gap-[1px]"><span className="text-[13px] font-bold">T</span><span className="text-[9px] font-bold mb-[1px]">T</span></span>} label="Heading" active={editor.isActive('heading', { level: 2 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<span className="text-[11px] font-bold leading-none">H1</span>} label="Heading 1" active={editor.isActive('heading', { level: 1 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 1 }).run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<span className="text-[11px] font-bold leading-none">H2</span>} label="Heading 2" active={editor.isActive('heading', { level: 2 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<span className="text-[11px] font-bold leading-none">H3</span>} label="Heading 3" active={editor.isActive('heading', { level: 3 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 3 }).run(); setSelectionToolbar(null); }} />
                   <div className="w-px h-4 bg-white/20 mx-0.5" />
                   <SelectionButton icon={<Bold className="w-3.5 h-3.5" />} label="Bold" active={editor.isActive('bold')} onClick={() => { editor.chain().focus().toggleBold().run(); setSelectionToolbar(null); }} />
                   <SelectionButton icon={<Italic className="w-3.5 h-3.5" />} label="Italic" active={editor.isActive('italic')} onClick={() => { editor.chain().focus().toggleItalic().run(); setSelectionToolbar(null); }} />
                   <SelectionButton icon={<Code className="w-3.5 h-3.5" />} label="Code" active={editor.isActive('code')} onClick={() => { editor.chain().focus().toggleCode().run(); setSelectionToolbar(null); }} />
                   <SelectionButton icon={<LinkIcon className="w-3.5 h-3.5" />} label="Link" active={editor.isActive('link')} onClick={() => { setLinkInput(''); setLinkPopoverOpen(true); }} />
+                  <SelectionButton icon={<Strikethrough className="w-3.5 h-3.5" />} label="Strikethrough" active={editor.isActive('strike')} onClick={() => { editor.chain().focus().toggleStrike().run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<Quote className="w-3.5 h-3.5" />} label="Blockquote" active={editor.isActive('blockquote')} onClick={() => { editor.chain().focus().toggleBlockquote().run(); setSelectionToolbar(null); }} />
                 </>
               )}
             </div>
@@ -437,15 +451,52 @@ export function PostEditorPage() {
                   onClick={() => inlineImageRef.current?.click()}
                   disabled={isInsertingImage}
                 />
-                <PlusMenuItem
-                  icon={<Table className="w-4 h-4" />}
-                  label="Table"
-                  onClick={() => insertBlock('| Column 1 | Column 2 |\n|----------|----------|\n| Cell | Cell |\n')}
-                />
+                <div className="relative">
+                  <PlusMenuItem
+                    icon={<Table className="w-4 h-4" />}
+                    label="Table"
+                    onClick={() => setTablePickerOpen(v => !v)}
+                  />
+                  {tablePickerOpen && (
+                    <div
+                      className="absolute left-0 top-full mt-1 bg-background border border-border rounded-lg shadow-lg p-2 z-30"
+                      onMouseLeave={() => setTableHover(null)}
+                    >
+                      <p className="text-xs text-muted-foreground mb-1.5 text-center">
+                        {tableHover ? `${tableHover.rows} × ${tableHover.cols}` : 'Pick size'}
+                      </p>
+                      <div className="grid gap-0.5" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+                        {Array.from({ length: 36 }, (_, i) => {
+                          const r = Math.floor(i / 6) + 1;
+                          const c = (i % 6) + 1;
+                          const highlighted = tableHover && r <= tableHover.rows && c <= tableHover.cols;
+                          return (
+                            <div
+                              key={i}
+                              className={`w-5 h-5 border rounded-sm cursor-pointer transition-colors ${highlighted ? 'bg-primary border-primary' : 'border-border hover:border-primary'}`}
+                              onMouseEnter={() => setTableHover({ rows: r, cols: c })}
+                              onClick={() => {
+                                editor?.chain().focus().insertTable({ rows: r, cols: c, withHeaderRow: true }).run();
+                                setTablePickerOpen(false);
+                                setTableHover(null);
+                                setPlusMenuOpen(false);
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <PlusMenuItem
                   icon={<Code className="w-4 h-4" />}
                   label="Code block"
-                  onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+                  onClick={() => { setPlusMenuOpen(false); editor?.chain().focus().toggleCodeBlock().run(); }}
+                />
+                <PlusMenuItem
+                  icon={<Minus className="w-4 h-4" />}
+                  label="Divider"
+                  onClick={() => { setPlusMenuOpen(false); editor?.chain().focus().setHorizontalRule().run(); }}
                 />
               </div>
               )}
