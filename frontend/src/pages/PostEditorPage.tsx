@@ -8,7 +8,7 @@ import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import { Markdown } from 'tiptap-markdown';
 import {
-  Bold, Italic, Link as LinkIcon, ImagePlus, X, Loader2, Table, Code, Plus,
+  Bold, Italic, Link as LinkIcon, ImagePlus, X, Loader2, Table, Code, Plus, Sparkles,
 } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { useAuth } from '@/context/AuthContext';
 import { postService } from '@/services/postService';
 import { topicService } from '@/services/topicService';
 import type { Topic } from '@/services/topicService';
+import { aiService } from '@/services/aiService';
 import { resolveImageUrl } from '@/lib/utils';
 
 export function PostEditorPage() {
@@ -43,6 +44,9 @@ export function PostEditorPage() {
   const [topicsDialogOpen, setTopicsDialogOpen] = useState(false);
   const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [isSuggestingTopics, setIsSuggestingTopics] = useState(false);
   const [plusTop, setPlusTop] = useState<number | null>(null);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number } | null>(null);
@@ -177,6 +181,40 @@ export function PostEditorPage() {
     if (coverFileRef.current) coverFileRef.current.value = '';
   }
 
+  async function handleAiAssist(instruction: 'improve' | 'continue' | 'outline') {
+    const content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      const result = await aiService.assist(title, content, instruction);
+      if (editor) {
+        if (instruction === 'continue') {
+          editor.chain().focus().insertContentAt(editor.state.doc.content.size, '\n\n' + result).run();
+        } else {
+          editor.chain().setContent(result, { emitUpdate: true }).focus().run();
+        }
+        setText((editor.storage as any).markdown.getMarkdown());
+      } else {
+        setText(instruction === 'continue' ? content + '\n\n' + result : result);
+      }
+    } catch {
+      setAiError('AI request failed. Please try again.');
+    } finally {
+      setIsAiLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!topicsDialogOpen || allTopics.length === 0) return;
+    const content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
+    if (!content.trim()) return;
+    setIsSuggestingTopics(true);
+    aiService.suggestTopics(title, content, allTopics)
+      .then(ids => setSelectedTopicIds(ids))
+      .catch(() => {})
+      .finally(() => setIsSuggestingTopics(false));
+  }, [topicsDialogOpen]);
+
   function handleSubmit() {
     const content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
     if (!title.trim()) { setError('Title is required.'); return; }
@@ -309,6 +347,22 @@ export function PostEditorPage() {
           className="w-full text-4xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/40 mb-8 focus:ring-0 resize-none overflow-hidden leading-tight"
         />
 
+        <div className="flex items-center gap-2 mb-4">
+          {(['improve', 'continue', 'outline'] as const).map(action => (
+            <button
+              key={action}
+              type="button"
+              onClick={() => handleAiAssist(action)}
+              disabled={isAiLoading || !title.trim()}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40"
+            >
+              {isAiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {action.charAt(0).toUpperCase() + action.slice(1)}
+            </button>
+          ))}
+        </div>
+        {aiError && <p className="text-xs text-destructive mb-3">{aiError}</p>}
+
         <div ref={wrapperRef} className="relative pl-10">
           {selectionToolbar && editor && (
             <div
@@ -388,10 +442,17 @@ export function PostEditorPage() {
             <DialogTitle>Choose topics</DialogTitle>
             <DialogDescription>Select the topics that best describe your post.</DialogDescription>
           </DialogHeader>
+          {isSuggestingTopics && (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              AI is suggesting topics…
+            </span>
+          )}
           <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto py-1">
-            {allTopics.map(topic => {
-              const active = selectedTopicIds.includes(topic._id);
-              return (
+            {(() => {
+              const selectedTopics = allTopics.filter(t => selectedTopicIds.includes(t._id));
+              const unselectedTopics = allTopics.filter(t => !selectedTopicIds.includes(t._id));
+              const renderPill = (topic: Topic, active: boolean) => (
                 <button
                   key={topic._id}
                   type="button"
@@ -405,7 +466,16 @@ export function PostEditorPage() {
                   {topic.name}
                 </button>
               );
-            })}
+              return (
+                <>
+                  {selectedTopics.map(t => renderPill(t, true))}
+                  {selectedTopics.length > 0 && unselectedTopics.length > 0 && (
+                    <div className="w-full h-px bg-border my-1" />
+                  )}
+                  {unselectedTopics.map(t => renderPill(t, false))}
+                </>
+              );
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTopicsDialogOpen(false)}>Cancel</Button>

@@ -7,6 +7,7 @@ export interface Post {
   commentsCount: number;
   likesCount: number;
   topics?: string[];
+  summary?: string;
 }
 
 export interface Comment {
