@@ -4,7 +4,6 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
-import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import { Markdown } from 'tiptap-markdown';
 import {
@@ -21,6 +20,7 @@ import { topicService } from '@/services/topicService';
 import type { Topic } from '@/services/topicService';
 import { aiService } from '@/services/aiService';
 import { resolveImageUrl } from '@/lib/utils';
+import isURL from 'validator/lib/isURL';
 
 export function PostEditorPage() {
   const { id } = useParams<{ id?: string }>();
@@ -50,6 +50,8 @@ export function PostEditorPage() {
   const [plusTop, setPlusTop] = useState<number | null>(null);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number } | null>(null);
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
+  const [linkInput, setLinkInput] = useState('');
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -62,9 +64,8 @@ export function PostEditorPage() {
       StarterKit,
       Placeholder.configure({ placeholder: 'Tell your story…' }),
       Typography,
-      Link.configure({ openOnClick: false }),
       Image.configure({ inline: false }),
-      Markdown,
+      Markdown.configure({ escapePatterns: false, linkify: true }),
     ],
     editorProps: {
       attributes: {
@@ -289,7 +290,15 @@ export function PostEditorPage() {
           type="button"
           role="switch"
           aria-checked={rawMode}
-          onClick={() => setRawMode(v => !v)}
+          onClick={() => setRawMode(v => {
+            if (!v && editor) {
+              setText((editor.storage as any).markdown.getMarkdown());
+            }
+            if (v && editor) {
+              editor.commands.setContent(text);
+            }
+            return !v;
+          })}
           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${rawMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}
         >
           <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${rawMode ? 'translate-x-4' : 'translate-x-1'}`} />
@@ -370,12 +379,44 @@ export function PostEditorPage() {
               style={{ top: selectionToolbar.top, left: selectionToolbar.left }}
               onMouseDown={e => e.preventDefault()}
             >
-              <SelectionButton icon={<span className="flex items-end leading-none gap-[1px]"><span className="text-[13px] font-bold">T</span><span className="text-[9px] font-bold mb-[1px]">T</span></span>} label="Heading" active={editor.isActive('heading', { level: 2 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); setSelectionToolbar(null); }} />
-              <div className="w-px h-4 bg-white/20 mx-0.5" />
-              <SelectionButton icon={<Bold className="w-3.5 h-3.5" />} label="Bold" active={editor.isActive('bold')} onClick={() => { editor.chain().focus().toggleBold().run(); setSelectionToolbar(null); }} />
-              <SelectionButton icon={<Italic className="w-3.5 h-3.5" />} label="Italic" active={editor.isActive('italic')} onClick={() => { editor.chain().focus().toggleItalic().run(); setSelectionToolbar(null); }} />
-              <SelectionButton icon={<Code className="w-3.5 h-3.5" />} label="Code" active={editor.isActive('code')} onClick={() => { editor.chain().focus().toggleCode().run(); setSelectionToolbar(null); }} />
-              <SelectionButton icon={<LinkIcon className="w-3.5 h-3.5" />} label="Link" active={false} onClick={() => { const url = window.prompt('URL'); if (url) editor.chain().focus().setLink({ href: url }).run(); setSelectionToolbar(null); }} />
+              {linkPopoverOpen ? (
+                <form
+                  className="flex items-center gap-1"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    const raw = linkInput.trim();
+                    if (raw) {
+                      const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+                      if (!isURL(href, { protocols: ['http', 'https'], require_protocol: true })) return;
+                      editor.chain().focus().setLink({ href }).run();
+                    }
+                    setLinkPopoverOpen(false);
+                    setLinkInput('');
+                    setSelectionToolbar(null);
+                  }}
+                >
+                  <input
+                    autoFocus
+                    value={linkInput}
+                    onChange={e => setLinkInput(e.target.value)}
+                    placeholder="https://…"
+                    className="bg-background text-foreground text-xs rounded px-2 py-0.5 outline-none w-44 border border-border"
+                    onKeyDown={e => {
+                      if (e.key === 'Escape') { setLinkPopoverOpen(false); setLinkInput(''); }
+                    }}
+                  />
+                  <button type="submit" className="text-xs px-2 py-0.5 rounded bg-primary text-primary-foreground">Add</button>
+                </form>
+              ) : (
+                <>
+                  <SelectionButton icon={<span className="flex items-end leading-none gap-[1px]"><span className="text-[13px] font-bold">T</span><span className="text-[9px] font-bold mb-[1px]">T</span></span>} label="Heading" active={editor.isActive('heading', { level: 2 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); setSelectionToolbar(null); }} />
+                  <div className="w-px h-4 bg-white/20 mx-0.5" />
+                  <SelectionButton icon={<Bold className="w-3.5 h-3.5" />} label="Bold" active={editor.isActive('bold')} onClick={() => { editor.chain().focus().toggleBold().run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<Italic className="w-3.5 h-3.5" />} label="Italic" active={editor.isActive('italic')} onClick={() => { editor.chain().focus().toggleItalic().run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<Code className="w-3.5 h-3.5" />} label="Code" active={editor.isActive('code')} onClick={() => { editor.chain().focus().toggleCode().run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<LinkIcon className="w-3.5 h-3.5" />} label="Link" active={editor.isActive('link')} onClick={() => { setLinkInput(''); setLinkPopoverOpen(true); }} />
+                </>
+              )}
             </div>
           )}
 
@@ -414,10 +455,7 @@ export function PostEditorPage() {
           {rawMode ? (
             <textarea
               value={text}
-              onChange={e => {
-                setText(e.target.value);
-                editor?.commands.setContent(e.target.value);
-              }}
+              onChange={e => setText(e.target.value)}
               placeholder="Write your post in markdown…"
               className="w-full min-h-[60vh] bg-transparent border-none outline-none text-base leading-7 resize-none focus:ring-0 placeholder:text-muted-foreground/40"
               style={{ overflow: 'auto' }}
