@@ -71,4 +71,8 @@
 .tiptap hr { border: none; border-top: 1px solid hsl(var(--border)); margin: 1.5em 0; }
 .tiptap img { max-width: 100%; border-radius: 0.5rem; margin: 0.75em 0; display: block; cursor: default; }
 .tiptap img.ProseMirror-selectednode { outline: 2px solid hsl(var(--primary)); border-radius: 0.5rem; }
+.tiptap table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0.75em 0; }
+.tiptap table td, .tiptap table th { border: 1px solid hsl(var(--border)); padding: 0.5em 0.75em; vertical-align: top; word-break: break-word; overflow-wrap: break-word; min-width: 2em; }
+.tiptap table th { background: hsl(var(--muted)); font-weight: 600; }
+.tiptap table .selectedCell { background: hsl(var(--primary) / 0.1); }
 
