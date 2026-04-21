@@ -9,9 +9,11 @@ import { useUser } from '@/context/UserContext';
 
 export function OnboardingPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
-  const { setProfile } = useUser();
+  const { profile, setProfile } = useUser();
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set((profile?.interests ?? []).map((t: any) => t._id ?? t))
+  );
   const navigate = useNavigate();
 
   useEffect(() => {

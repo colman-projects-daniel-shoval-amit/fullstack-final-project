@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, User, BookOpen, Users, LogOut, PenSquare } from 'lucide-react';
+import { Home, User, BookOpen, Users, LogOut, PenSquare, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useSideNav } from '@/context/SideNavContext';
 import { Separator } from '@/components/ui/separator';
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/my-posts', icon: BookOpen, label: 'My Posts', end: false },
   { to: '/following', icon: Users, label: 'Following', end: false },
   { to: '/posts/new', icon: PenSquare, label: 'Write', end: false },
+  { to: '/onboarding?edit=true', icon: Sparkles, label: 'Interests', end: false },
 ];
 
 export function SideNav() {
