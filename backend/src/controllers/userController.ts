@@ -112,11 +112,24 @@ class UserController extends BaseController {
         if (!selfId) return res.status(401).json({ error: 'Unauthorized' });
         try {
             const self = await UserModel.findById(selfId).select('interests');
-            if (!self?.interests?.length) return res.json([]);
-            const authorIds: mongoose.Types.ObjectId[] = await PostModel.distinct('authorId', { topics: { $in: self.interests } });
-            const filtered = authorIds.filter(id => id.toString() !== selfId);
-            const users = await UserModel.find({ _id: { $in: filtered } }).limit(5).select('email');
-            res.json(users);
+            let matchedUsers: any[] = [];
+            let matchedIds: mongoose.Types.ObjectId[] = [];
+
+            if (self?.interests?.length) {
+                matchedIds = await PostModel.distinct('authorId', { topics: { $in: self.interests } });
+                const filteredIds = matchedIds.filter(id => id.toString() !== String(selfId));
+                matchedUsers = await UserModel.find({ _id: { $in: filteredIds } }).limit(5).select('email');
+            }
+
+            const remaining = 5 - matchedUsers.length;
+            let otherUsers: any[] = [];
+            if (remaining > 0) {
+                otherUsers = await UserModel.find({
+                    _id: { $nin: [...matchedIds, selfId] },
+                }).limit(remaining).select('email');
+            }
+
+            res.json([...matchedUsers, ...otherUsers]);
         } catch (error) {
             this.handleError(res, error);
         }

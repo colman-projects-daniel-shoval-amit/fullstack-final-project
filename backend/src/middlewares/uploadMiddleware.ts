@@ -30,7 +30,7 @@ const uploadInstance = multer({
       cb(new Error('Only image files are allowed'));
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
 });
 
 export const uploadSingle = (fieldName: string) =>

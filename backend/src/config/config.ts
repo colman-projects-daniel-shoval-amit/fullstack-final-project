@@ -13,6 +13,7 @@ const envSchema = z.object({
     GOOGLE_CLIENT_SECRET: z.string().default(''),
     GOOGLE_CALLBACK_URL: z.string().default('http://localhost:3000/auth/google/callback'),
     FRONTEND_URL: z.string().default('http://localhost:5173'),
+    GEMINI_API_KEY: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);
