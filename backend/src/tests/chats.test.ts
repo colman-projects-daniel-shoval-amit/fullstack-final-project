@@ -4,8 +4,10 @@ import mongoose from "mongoose";
 import { Express } from "express";
 import userModel from "../models/userModel";
 import chatModel from "../models/chatModel";
-import { describe, expect, test, beforeAll, afterAll } from '@jest/globals';
+import { describe, expect, test, beforeAll, afterAll, jest } from '@jest/globals';
 import { getLogedInUser, UserData, userData1, userData2 } from "./utils";
+
+jest.setTimeout(30000);
 
 let app: Express;
 let loginUser1: UserData;

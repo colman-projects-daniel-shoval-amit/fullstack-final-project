@@ -5,6 +5,7 @@ module.exports = {
     testMatch: ["**/**/*.test.ts"],
     forceExit: true,
     setupFiles: ["<rootDir>/jest.setup.ts"],
+    modulePaths: ["<rootDir>/src"],
     collectCoverage: true,
     coverageReporters: ["json", "html", "text"]
 };
