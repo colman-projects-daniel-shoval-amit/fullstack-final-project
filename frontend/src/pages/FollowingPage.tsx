@@ -14,7 +14,10 @@ export function FollowingPage() {
   const followingIds = (profile?.following ?? []).map(u => u._id);
 
   useEffect(() => {
-    if (followingIds.length === 0) return;
+    if (followingIds.length === 0) {
+      setPosts([]);
+      return;
+    }
     setIsLoading(true);
     postService.getPostsByAuthors(followingIds)
       .then(setPosts)

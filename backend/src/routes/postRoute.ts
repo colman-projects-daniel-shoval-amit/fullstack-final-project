@@ -91,6 +91,12 @@ postRouter.get("/:id", postController.getById.bind(postController));
  *                 type: string
  *               text:
  *                 type: string
+ *               image:
+ *                 type: string
+ *               topics:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       201:
  *         description: The post was successfully created
@@ -150,5 +156,32 @@ postRouter.post("/", postController.create.bind(postController));
  *         description: The post was not found
  */
 postRouter.put("/:id", postController.put.bind(postController));
+
+/**
+ * @swagger
+ * /posts/{id}:
+ *   delete:
+ *     summary: Delete a post by id
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The post id
+ *     responses:
+ *       200:
+ *         description: The post was successfully deleted
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Not the owner)
+ *       404:
+ *         description: The post was not found
+ */
+postRouter.delete("/:id", postController.delete.bind(postController));
 
 export default postRouter;

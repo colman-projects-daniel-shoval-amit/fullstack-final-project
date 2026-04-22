@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { AuthPage } from '@/pages/AuthPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { GoogleCallbackPage } from '@/pages/GoogleCallbackPage';
@@ -14,8 +14,10 @@ import { useUser } from '@/context/UserContext';
 
 function OnboardingGuard() {
   const { profile, isLoadingProfile } = useUser();
+  const [searchParams] = useSearchParams();
   if (isLoadingProfile) return null;
-  if (profile && profile.interests.length > 0) return <Navigate to="/" replace />;
+  if (profile && profile.interests.length > 0 && searchParams.get('edit') !== 'true')
+    return <Navigate to="/" replace />;
   return <OnboardingPage />;
 }
 
