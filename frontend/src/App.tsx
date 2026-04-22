@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { ScrollToTop } from '@/components/ScrollToTop';
 import { AuthPage } from '@/pages/AuthPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { GoogleCallbackPage } from '@/pages/GoogleCallbackPage';
@@ -21,7 +22,9 @@ function OnboardingGuard() {
 
 function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/callback" element={<GoogleCallbackPage />} />
       <Route path="/not-found" element={<NotFoundPage />} />
@@ -39,6 +42,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />
     </Routes>
+    </>
   );
 }
 

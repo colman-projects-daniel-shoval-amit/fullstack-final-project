@@ -29,6 +29,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
+app.use((req, _res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use('/auth', authRouter);

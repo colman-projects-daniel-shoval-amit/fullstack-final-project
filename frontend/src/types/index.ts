@@ -30,6 +30,7 @@ export interface User {
 export interface UserProfile {
   _id: string;
   email: string;
+  avatar?: string;
   interests: { _id: string; name: string; slug: string }[];
   following: User[];
   followers: User[];

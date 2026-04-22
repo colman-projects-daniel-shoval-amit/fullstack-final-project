@@ -29,4 +29,17 @@ export const userService = {
     const res = await api.get<RecommendedUser[]>('/users/recommended');
     return res.data;
   },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await api.patch('/users/me/password', { currentPassword, newPassword });
+  },
+
+  async uploadAvatar(file: File): Promise<UserProfile> {
+    const form = new FormData();
+    form.append('image', file);
+    const res = await api.post<UserProfile>('/users/me/avatar', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
 };
