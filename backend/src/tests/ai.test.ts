@@ -5,7 +5,7 @@ import { Express } from "express";
 import userModel from "../models/userModel";
 import { geminiModel } from "../lib/gemini";
 import { describe, expect, test, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
-import { getLogedInUser, UserData, userData1 } from "./utils";
+import { getLogedInUser, UserData, userData1, safeDropDatabase } from "./utils";
 
 jest.setTimeout(30000);
 
@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 afterAll(async () => {
-    await mongoose.connection.dropDatabase();
+    await safeDropDatabase(mongoose.connection);
     await mongoose.connection.close();
 });
 

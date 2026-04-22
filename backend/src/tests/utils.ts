@@ -1,6 +1,15 @@
 import request from "supertest";
 import { Express } from "express";
+import mongoose from "mongoose";
 import userModel from "../models/userModel";
+
+export const safeDropDatabase = async (connection: typeof mongoose.connection): Promise<void> => {
+    const dbName = connection.db?.databaseName ?? '';
+    if (!dbName.endsWith('_test')) {
+        throw new Error(`Refusing to drop database "${dbName}" — only _test databases are allowed`);
+    }
+    await connection.dropDatabase();
+};
 
 export type UserData = {
     email: string,

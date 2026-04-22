@@ -6,7 +6,7 @@ import userModel from "../models/userModel";
 import postModel from "../models/postModel";
 import likeModel from "../models/likeModel";
 import { describe, expect, test, beforeAll, afterAll, jest } from '@jest/globals';
-import { getLogedInUser, UserData, userData1, userData2 } from "./utils";
+import { getLogedInUser, UserData, userData1, userData2, safeDropDatabase } from "./utils";
 
 jest.setTimeout(30000);
 
@@ -25,7 +25,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    await mongoose.connection.dropDatabase();
+    await safeDropDatabase(mongoose.connection);
     await mongoose.connection.close();
 });
 
