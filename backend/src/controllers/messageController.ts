@@ -3,6 +3,7 @@ import baseController from "./baseController";
 import MessageModel from "../models/messageModel";
 import ChatModel from "../models/chatModel";
 import { AuthRequest } from "../middlewares/authMiddleware";
+import { getIo } from "../socket";
 
 class MessageController extends baseController {
     constructor() {
@@ -26,7 +27,15 @@ class MessageController extends baseController {
                 return;
             }
 
-            super.create(req, res);
+            const message = await MessageModel.create({
+                senderId: req.user?._id,
+                chatId,
+                content: req.body.content,
+            });
+
+            getIo()?.to(String(chatId)).emit('new_message', message);
+
+            res.status(201).json(message);
         } catch (error) {
             this.handleError(res, error);
         }
