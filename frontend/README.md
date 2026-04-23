@@ -13,6 +13,7 @@ The React single-page application for the InkWall social-blogging platform.
 | Styling | Tailwind CSS 3 + `@tailwindcss/typography` |
 | UI primitives | Radix UI (Dialog, Label, Slot) |
 | HTTP client | Axios (with JWT interceptor + auto token refresh) |
+| Real-time | Socket.io client v4 |
 | Rich text editor | TipTap v3 (Markdown, images, links, bubble menu) |
 | Markdown rendering | `react-markdown` + `remark-gfm` |
 | Icons | Lucide React |
@@ -56,6 +57,8 @@ src/
 │   ├── AuthContext.tsx   # JWT token state, login/register/logout, Google OAuth callback
 │   ├── UserContext.tsx   # Logged-in user profile, follow/unfollow, global profile cache
 │   └── SideNavContext.tsx
+├── hooks/
+│   └── useSocket.ts      # Socket.io-client singleton hook (autoConnect:false, Strict Mode safe)
 ├── services/
 │   ├── axiosInstance.ts  # Axios instance — injects Bearer token, handles 401 refresh
 │   ├── authService.ts
@@ -63,7 +66,8 @@ src/
 │   ├── commentService.ts
 │   ├── likeService.ts
 │   ├── userService.ts    # getMe, updateInterests, uploadAvatar, changePassword, follow/unfollow
-│   └── topicService.ts
+│   ├── topicService.ts
+│   └── chatService.ts    # getMyChats, getChatWithMessages, createChat, sendMessage, getAllUsers
 ├── pages/
 │   ├── AuthPage.tsx          # Login / register tabs
 │   ├── GoogleCallbackPage.tsx
@@ -74,6 +78,7 @@ src/
 │   ├── ProfilePage.tsx       # Avatar upload, topic interests, password change
 │   ├── MyPostsPage.tsx       # The logged-in user's own posts
 │   ├── FollowingPage.tsx     # Feed from followed authors + who-you-follow sidebar
+│   ├── MessagesPage.tsx      # Real-time two-column chat UI (sidebar + message thread)
 │   └── NotFoundPage.tsx
 ├── components/
 │   ├── AuthGuard.tsx         # Redirects unauthenticated users to /auth
@@ -123,8 +128,31 @@ Page/Component
 | `/profile` | `ProfilePage` | Protected |
 | `/my-posts` | `MyPostsPage` | Protected |
 | `/following` | `FollowingPage` | Protected |
+| `/messages/:chatId?` | `MessagesPage` | Protected; `chatId` is optional — omitting it shows the empty-state placeholder |
 
 All protected routes are wrapped in `AuthGuard`, which redirects to `/auth` if no token is present.
+
+## Real-Time Chat
+
+`MessagesPage` is a two-column WhatsApp-style interface: a resizable chat list sidebar on the left and a live message thread on the right.
+
+### Socket architecture
+
+The page uses the **Personal User Room** pattern to avoid pre-joining every chat room on load:
+
+1. On mount the client emits `join_user_room` with the logged-in user's ID. The server places the socket in a room named after the user. This is the only room that must be joined regardless of which chat is open.
+2. When the user opens a chat the client emits `join_chat` with that `chatId` to join the active room.
+3. The server broadcasts two events when a message is saved:
+   - `new_message` → active chat room (updates the message thread in real time)
+   - `chat_list_update` → every participant's personal room (bumps that chat to the top of every participant's sidebar instantly)
+
+### URL-driven state
+
+The active chat ID lives in the URL (`/messages/:chatId?`) rather than component state. This means the active chat survives page refresh, and the browser back/forward buttons work naturally. Clicking a chat or creating a new one navigates with `useNavigate` instead of `setState`.
+
+### Duplicate chat prevention
+
+`POST /chats` uses a `$all + $size: 2` Mongoose query to find an existing 1-on-1 chat before creating a new one, returning `200` for an existing chat and `201` for a new one. The frontend redirect works identically for both.
 
 ### Path alias
 
