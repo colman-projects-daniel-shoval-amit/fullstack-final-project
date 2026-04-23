@@ -3,6 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IChat extends Document {
     title: string;
     participants: mongoose.Types.ObjectId[];
+    updatedAt: Date;
+    createdAt: Date;
 }
 
 const chatSchema = new Schema<IChat>({
@@ -15,7 +17,7 @@ const chatSchema = new Schema<IChat>({
         ref: "User",
         required: true,
     }]
-});
+}, { timestamps: true });
 const ChatModel = mongoose.model<IChat>("Chat", chatSchema);
 
 chatSchema.post('findOneAndDelete', async function (doc) {

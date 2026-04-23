@@ -39,7 +39,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my-posts" element={<MyPostsPage />} />
         <Route path="/following" element={<FollowingPage />} />
-        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/messages/:chatId?" element={<MessagesPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />

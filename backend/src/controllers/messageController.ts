@@ -33,7 +33,18 @@ class MessageController extends baseController {
                 content: req.body.content,
             });
 
-            getIo()?.to(message.chatId.toString()).emit('new_message', message.toJSON());
+            await ChatModel.findByIdAndUpdate(chatId, { $set: { updatedAt: new Date() } });
+
+            const io = getIo();
+            const payload = message.toJSON();
+
+            // Broadcast the full message to the active chat room (message window)
+            io?.to(message.chatId.toString()).emit('new_message', payload);
+
+            // Broadcast a sidebar update to each participant's personal room
+            for (const participantId of chat.participants) {
+                io?.to(participantId.toString()).emit('chat_list_update', payload);
+            }
 
             res.status(201).json(message);
         } catch (error) {

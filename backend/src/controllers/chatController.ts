@@ -12,7 +12,7 @@ class ChatController extends baseController {
     async getByUserId(req: AuthRequest, res: Response) {
         const userId = req.params.userId;
         try {
-            const chats = await ChatModel.find({ participants: userId });
+            const chats = await ChatModel.find({ participants: userId }).sort({ updatedAt: -1 });
             res.json(chats);
         } catch (error) {
             this.handleError(res, error);
@@ -38,9 +38,25 @@ class ChatController extends baseController {
             req.body.participants = [];
         }
         const userId = req.user?._id;
-        // Make sure creator is in the participants
         if (userId && !req.body.participants.includes(userId)) {
             req.body.participants.push(userId);
+        }
+
+        // For 1-on-1 chats, return the existing chat rather than creating a duplicate
+        const allParticipants: string[] = req.body.participants;
+        if (allParticipants.length === 2) {
+            try {
+                const existing = await ChatModel.findOne({
+                    participants: { $all: allParticipants, $size: 2 },
+                });
+                if (existing) {
+                    res.status(200).json(existing);
+                    return;
+                }
+            } catch (error) {
+                this.handleError(res, error);
+                return;
+            }
         }
 
         super.create(req, res);

@@ -38,7 +38,8 @@ beforeAll(async () => {
     const io = new Server(httpServer, { cors: { origin: '*' } });
     setIo(io);
     io.on('connection', socket => {
-        socket.on('join_chat', (cid: string) => socket.join(cid.toString()));
+        socket.on('join_chat', (cid: string) => { if (cid) socket.join(cid.toString()); });
+        socket.on('join_user_room', (uid: string) => { if (uid) socket.join(uid.toString()); });
     });
 
     await new Promise<void>(resolve => httpServer.listen(0, resolve));
@@ -55,7 +56,8 @@ beforeAll(async () => {
     clientSocket = ioClient(`http://localhost:${port}`, { transports: ['websocket'] });
     await new Promise<void>(resolve => clientSocket.on('connect', resolve));
     clientSocket.emit('join_chat', chatId);
-    // Wait for the server to process the join before tests start
+    clientSocket.emit('join_user_room', loginUser1._id);
+    // Wait for the server to process both joins before tests start
     await new Promise(res => setTimeout(res, 100));
 });
 
@@ -127,5 +129,46 @@ describe('Socket.io — new_message broadcast', () => {
         await new Promise(res => setTimeout(res, 150));
         expect(received).toBe(false);
         clientSocket.off('new_message');
+    });
+});
+
+describe('Socket.io — chat_list_update broadcast', () => {
+    test('emits chat_list_update to the sender personal room', async () => {
+        const received = new Promise<Record<string, unknown>>(resolve => {
+            clientSocket.once('chat_list_update', resolve);
+        });
+
+        await request(app)
+            .post('/messages')
+            .set('Authorization', 'Bearer ' + loginUser1.token)
+            .send({ chatId, content: 'sidebar update test' })
+            .expect(201);
+
+        const msg = await received;
+        expect(msg).toMatchObject({
+            chatId,
+            content: 'sidebar update test',
+            senderId: loginUser1._id,
+        });
+    });
+
+    test('chat_list_update payload contains the same fields as new_message', async () => {
+        const newMsg = new Promise<Record<string, unknown>>(resolve => {
+            clientSocket.once('new_message', resolve);
+        });
+        const sidebarMsg = new Promise<Record<string, unknown>>(resolve => {
+            clientSocket.once('chat_list_update', resolve);
+        });
+
+        await request(app)
+            .post('/messages')
+            .set('Authorization', 'Bearer ' + loginUser1.token)
+            .send({ chatId, content: 'dual broadcast check' })
+            .expect(201);
+
+        const [a, b] = await Promise.all([newMsg, sidebarMsg]);
+        expect(a._id).toBe(b._id);
+        expect(a.chatId).toBe(b.chatId);
+        expect(a.content).toBe(b.content);
     });
 });

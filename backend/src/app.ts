@@ -15,7 +15,11 @@ initApp().then((app) => {
 
     io.on('connection', (socket) => {
         socket.on('join_chat', (chatId: string) => {
-            socket.join(chatId.toString());
+            if (chatId) socket.join(chatId.toString());
+        });
+
+        socket.on('join_user_room', (userId: string) => {
+            if (userId) socket.join(userId.toString());
         });
     });
 

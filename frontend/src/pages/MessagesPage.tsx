@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Send, Plus, MessageSquare } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -17,9 +18,10 @@ import type { Chat, Message, User } from '@/types';
 export function MessagesPage() {
   const { profile } = useUser();
   const socket = useSocket();
+  const { chatId = null } = useParams<{ chatId: string }>();
+  const navigate = useNavigate();
 
   const [chats, setChats] = useState<Chat[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -38,22 +40,38 @@ export function MessagesPage() {
       .catch(() => {});
   }, [profile?._id]);
 
-  // Load messages and join socket room when active chat changes
+  // Join personal user room so sidebar broadcasts are received for all chats
   useEffect(() => {
-    if (!activeChatId) return;
+    if (!profile?._id) return;
+    socket.emit('join_user_room', profile._id);
+  }, [socket, profile?._id]);
+
+  // Load messages and join active chat room when chatId changes
+  useEffect(() => {
+    if (!chatId) return;
     setIsLoadingMessages(true);
-    chatService.getChatWithMessages(activeChatId)
+    chatService.getChatWithMessages(chatId)
       .then(chat => setMessages(chat.messages ?? []))
       .catch(() => setMessages([]))
       .finally(() => setIsLoadingMessages(false));
 
-    socket.emit('join_chat', activeChatId);
-  }, [activeChatId, socket]);
+    socket.emit('join_chat', chatId);
+  }, [chatId, socket]);
 
-  // Listen for incoming messages from other users
+  // Rejoin both rooms after a socket reconnect
+  useEffect(() => {
+    function handleReconnect() {
+      if (profile?._id) socket.emit('join_user_room', profile._id);
+      if (chatId) socket.emit('join_chat', chatId);
+    }
+    socket.on('connect', handleReconnect);
+    return () => { socket.off('connect', handleReconnect); };
+  }, [socket, profile?._id, chatId]);
+
+  // new_message: append to the active chat window only
   useEffect(() => {
     function handleNewMessage(msg: Message) {
-      if (msg.chatId !== activeChatId) return;
+      if (msg.chatId !== chatId) return;
       // Deduplicate: the sender already added the message optimistically
       setMessages(prev => {
         if (prev.some(m => m._id === msg._id)) return prev;
@@ -62,17 +80,16 @@ export function MessagesPage() {
     }
     socket.on('new_message', handleNewMessage);
     return () => { socket.off('new_message', handleNewMessage); };
-  }, [socket, activeChatId]);
+  }, [socket, chatId]);
 
-  // Re-join the active room after a socket reconnect
+  // chat_list_update: bump the relevant chat to the top of the sidebar
   useEffect(() => {
-    if (!activeChatId) return;
-    function handleReconnect() {
-      socket.emit('join_chat', activeChatId);
+    function handleChatListUpdate(msg: Message) {
+      bumpChatToTop(msg.chatId);
     }
-    socket.on('connect', handleReconnect);
-    return () => { socket.off('connect', handleReconnect); };
-  }, [socket, activeChatId]);
+    socket.on('chat_list_update', handleChatListUpdate);
+    return () => { socket.off('chat_list_update', handleChatListUpdate); };
+  }, [socket]);
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -80,15 +97,16 @@ export function MessagesPage() {
   }, [messages]);
 
   async function handleSend() {
-    if (!activeChatId || !inputText.trim() || isSending) return;
+    if (!chatId || !inputText.trim() || isSending) return;
     const text = inputText.trim();
     setInputText('');
     setIsSending(true);
     try {
-      const sent = await chatService.sendMessage(activeChatId, text);
+      const sent = await chatService.sendMessage(chatId, text);
       // Deduplicate: if the socket event arrived before the REST response
       // resolved, the message is already in state — don't add it twice.
       setMessages(prev => prev.some(m => m._id === sent._id) ? prev : [...prev, sent]);
+      bumpChatToTop(chatId);
     } catch {
       setInputText(text);
     } finally {
@@ -121,14 +139,24 @@ export function MessagesPage() {
         if (prev.some(c => c._id === chat._id)) return prev;
         return [chat, ...prev];
       });
-      setActiveChatId(chat._id);
+      navigate('/messages/' + chat._id);
       setShowNewChatDialog(false);
     } finally {
       setIsCreatingChat(false);
     }
   }
 
-  const activeChat = chats.find(c => c._id === activeChatId);
+  function bumpChatToTop(cId: string) {
+    setChats(prev => {
+      const idx = prev.findIndex(c => c._id === cId);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      next.unshift(next.splice(idx, 1)[0]);
+      return next;
+    });
+  }
+
+  const activeChat = chats.find(c => c._id === chatId);
 
   return (
     <PageLayout>
@@ -152,9 +180,9 @@ export function MessagesPage() {
               chats.map(chat => (
                 <button
                   key={chat._id}
-                  onClick={() => setActiveChatId(chat._id)}
+                  onClick={() => navigate('/messages/' + chat._id)}
                   className={`w-full text-left px-4 py-3 text-sm transition-colors hover:bg-muted/50 ${
-                    chat._id === activeChatId ? 'bg-muted font-medium' : 'text-muted-foreground'
+                    chat._id === chatId ? 'bg-muted font-medium' : 'text-muted-foreground'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -170,7 +198,7 @@ export function MessagesPage() {
         </div>
 
         {/* Right panel — chat window */}
-        {activeChatId ? (
+        {chatId ? (
           <div className="flex flex-col flex-1 min-w-0">
             {/* Header */}
             <div className="px-5 py-3 border-b shrink-0">
