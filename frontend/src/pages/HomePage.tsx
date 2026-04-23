@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle } from 'lucide-react';
+import { Heart, MessageCircle, MessageSquare } from 'lucide-react';
+import { useStartChat } from '@/hooks/useStartChat';
 import { PageLayout } from '@/components/PageLayout';
 import { PostCard } from '@/components/PostCard';
 import { PostCardSkeleton } from '@/components/PostCardSkeleton';
@@ -197,9 +198,11 @@ export function HomePage() {
 }
 
 function RecommendedUserRow({ user }: { user: RecommendedUser }) {
-  const { isFollowing, follow, unfollow } = useUser();
+  const { isFollowing, follow, unfollow, profile } = useUser();
+  const { startChat, isLoading: isChatLoading } = useStartChat();
   const [isPending, setIsPending] = useState(false);
   const following = isFollowing(user._id);
+  const isSelf = profile?._id === user._id;
 
   async function handleClick() {
     if (isPending) return;
@@ -217,6 +220,16 @@ function RecommendedUserRow({ user }: { user: RecommendedUser }) {
         {user.email[0].toUpperCase()}
       </div>
       <span className="flex-1 text-sm text-foreground truncate">{user.email}</span>
+      {!isSelf && (
+        <button
+          onClick={() => startChat(user._id, `Chat with ${user.email}`)}
+          disabled={isChatLoading}
+          title="Send message"
+          className="text-muted-foreground hover:text-primary transition-colors shrink-0 disabled:opacity-50 p-0.5"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+        </button>
+      )}
       <button
         onClick={handleClick}
         disabled={isPending}

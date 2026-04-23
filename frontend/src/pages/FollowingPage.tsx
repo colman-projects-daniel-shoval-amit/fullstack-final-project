@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { MessageSquare } from 'lucide-react';
+import { useStartChat } from '@/hooks/useStartChat';
 import { PageLayout } from '@/components/PageLayout';
 import { PostCard } from '@/components/PostCard';
 import { PostCardSkeleton } from '@/components/PostCardSkeleton';
@@ -89,6 +91,7 @@ export function FollowingPage() {
 
 function FollowingRow({ userId, email }: { userId: string; email: string }) {
   const { unfollow } = useUser();
+  const { startChat, isLoading: isChatLoading } = useStartChat();
   const [isPending, setIsPending] = useState(false);
 
   async function handleUnfollow() {
@@ -108,6 +111,14 @@ function FollowingRow({ userId, email }: { userId: string; email: string }) {
       </div>
       <span className="flex-1 text-sm truncate">{email}</span>
       <button
+        onClick={() => startChat(userId, `Chat with ${email}`)}
+        disabled={isChatLoading}
+        title="Send message"
+        className="text-muted-foreground hover:text-primary transition-colors shrink-0 disabled:opacity-50 p-0.5"
+      >
+        <MessageSquare className="w-3.5 h-3.5" />
+      </button>
+      <button
         onClick={handleUnfollow}
         disabled={isPending}
         className="text-xs px-2.5 py-0.5 rounded-full border border-muted-foreground/40 text-muted-foreground hover:border-destructive hover:text-destructive transition-colors shrink-0 disabled:opacity-50"
@@ -119,9 +130,11 @@ function FollowingRow({ userId, email }: { userId: string; email: string }) {
 }
 
 function RecommendedUserRow({ user }: { user: RecommendedUser }) {
-  const { isFollowing, follow, unfollow } = useUser();
+  const { isFollowing, follow, unfollow, profile } = useUser();
+  const { startChat, isLoading: isChatLoading } = useStartChat();
   const [isPending, setIsPending] = useState(false);
   const following = isFollowing(user._id);
+  const isSelf = profile?._id === user._id;
 
   async function handleClick() {
     if (isPending) return;
@@ -139,6 +152,16 @@ function RecommendedUserRow({ user }: { user: RecommendedUser }) {
         {user.email?.[0]?.toUpperCase() ?? '?'}
       </div>
       <span className="flex-1 text-sm truncate">{user.email}</span>
+      {!isSelf && (
+        <button
+          onClick={() => startChat(user._id, `Chat with ${user.email}`)}
+          disabled={isChatLoading}
+          title="Send message"
+          className="text-muted-foreground hover:text-primary transition-colors shrink-0 disabled:opacity-50 p-0.5"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+        </button>
+      )}
       <button
         onClick={handleClick}
         disabled={isPending}
