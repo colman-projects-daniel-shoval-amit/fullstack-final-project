@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/app.ts",
-    "seed:topics": "tsx src/scripts/seedTopics.ts",
+    "seed:all": "tsx src/scripts/seedAll.ts",
     "test": "jest --runInBand --detectOpenHandles --forceExit"
   },
   "keywords": [],

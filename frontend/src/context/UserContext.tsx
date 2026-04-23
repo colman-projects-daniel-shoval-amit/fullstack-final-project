@@ -7,7 +7,7 @@ interface UserContextValue {
   profile: UserProfile | null;
   isLoadingProfile: boolean;
   isFollowing: (userId: string) => boolean;
-  follow: (userId: string) => Promise<void>;
+  follow: (userId: string, email?: string) => Promise<void>;
   unfollow: (userId: string) => Promise<void>;
   setProfile: (profile: UserProfile) => void;
 }
@@ -35,12 +35,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return (profile?.following ?? []).some(u => u._id === userId);
   }, [profile]);
 
-  const follow = useCallback(async (userId: string) => {
+  const follow = useCallback(async (userId: string, email = '') => {
     await userService.followUser(userId);
     setProfile(prev => {
       if (!prev) return prev;
       if (prev.following.some(u => u._id === userId)) return prev;
-      return { ...prev, following: [...prev.following, { _id: userId, email: '' }] };
+      return { ...prev, following: [...prev.following, { _id: userId, email }] };
     });
   }, []);
 

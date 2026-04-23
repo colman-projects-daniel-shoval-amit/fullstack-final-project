@@ -5,6 +5,7 @@ export interface IUser extends Document {
   password: string;
   googleId: string;
   refreshTokens: string[];
+  avatar?: string;
   interests: mongoose.Types.ObjectId[];
   following: mongoose.Types.ObjectId[];
   followers: mongoose.Types.ObjectId[];
@@ -28,6 +29,7 @@ const userSchema = new Schema<IUser>({
         type: [String],
         default: [],
     },
+    avatar: { type: String, required: false },
     interests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Topic', default: [] }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: [] }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: [] }],
