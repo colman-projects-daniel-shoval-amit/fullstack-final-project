@@ -5,8 +5,10 @@ import { Express } from "express";
 import userModel from "../models/userModel";
 import commentModel from "../models/commentModel";
 import postModel from "../models/postModel";
-import { describe, expect, test, beforeAll, afterAll } from '@jest/globals';
-import { getLogedInUser, UserData, userData1, userData2 } from "./utils";
+import { describe, expect, test, beforeAll, afterAll, jest } from '@jest/globals';
+import { getLogedInUser, UserData, userData1, userData2, safeDropDatabase } from "./utils";
+
+jest.setTimeout(30000);
 
 let app: Express;
 let loginUser1: UserData;
@@ -22,7 +24,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    await mongoose.connection.dropDatabase();
+    await safeDropDatabase(mongoose.connection);
     await mongoose.connection.close();
 });
 
@@ -130,5 +132,42 @@ describe("Post Tests", () => {
             .set("Authorization", "Bearer " + loginUser1.token)
             .send({ image: "Updated image" });
         expect(response.statusCode).toBe(400);
+    });
+
+    test("Delete Post - Fail (No Auth)", async () => {
+        const response = await request(app).delete("/posts/" + postId);
+        expect(response.statusCode).toBe(401);
+    });
+
+    test("Delete Post - Fail (Not Owner)", async () => {
+        const response = await request(app)
+            .delete("/posts/" + postId)
+            .set("Authorization", "Bearer " + loginUser2.token);
+        expect(response.statusCode).toBe(403);
+    });
+
+    test("Delete Post - Fail (Not Found)", async () => {
+        const nonExistentId = new mongoose.Types.ObjectId();
+        const response = await request(app)
+            .delete("/posts/" + nonExistentId)
+            .set("Authorization", "Bearer " + loginUser1.token);
+        expect(response.statusCode).toBe(404);
+    });
+
+    test("Delete Post - Fail (Invalid ID Format)", async () => {
+        const response = await request(app)
+            .delete("/posts/invalid-id")
+            .set("Authorization", "Bearer " + loginUser1.token);
+        expect(response.statusCode).toBe(400);
+    });
+
+    test("Delete Post - Success", async () => {
+        const response = await request(app)
+            .delete("/posts/" + postId)
+            .set("Authorization", "Bearer " + loginUser1.token);
+        expect(response.statusCode).toBe(200);
+
+        const check = await postModel.findById(postId);
+        expect(check).toBeNull();
     });
 });

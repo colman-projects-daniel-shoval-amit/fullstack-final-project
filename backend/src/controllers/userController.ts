@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 import UserModel from '../models/userModel';
 import PostModel from '../models/postModel';
 import BaseController from './baseController';
@@ -63,6 +64,44 @@ class UserController extends BaseController {
             await UserModel.updateOne({ _id: selfId }, { $pull: { following: targetId } });
             await UserModel.updateOne({ _id: targetId }, { $pull: { followers: selfId } });
             res.json({ message: 'Unfollowed' });
+        } catch (error) {
+            this.handleError(res, error);
+        }
+    }
+
+    async changePassword(req: AuthRequest, res: Response) {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ error: 'currentPassword and newPassword are required' });
+        }
+        try {
+            const user = await UserModel.findById(req.user?._id).select('+password');
+            if (!user) return res.status(404).json({ error: 'User not found' });
+            if (!user.password) {
+                return res.status(400).json({ error: 'Account uses Google sign-in; no password to change' });
+            }
+            const isMatch = await bcrypt.compare(currentPassword, user.password);
+            if (!isMatch) return res.status(400).json({ error: 'Current password is incorrect' });
+            user.password = await bcrypt.hash(newPassword, 10);
+            await user.save();
+            res.json({ message: 'Password updated' });
+        } catch (error) {
+            this.handleError(res, error);
+        }
+    }
+
+    async uploadAvatar(req: AuthRequest, res: Response) {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const avatar = `/uploads/${req.file.filename}`;
+        try {
+            const user = await UserModel.findByIdAndUpdate(
+                req.user?._id,
+                { avatar },
+                { new: true }
+            ).populate('interests', 'name slug')
+             .populate('following', 'email')
+             .populate('followers', 'email');
+            res.json(user);
         } catch (error) {
             this.handleError(res, error);
         }
