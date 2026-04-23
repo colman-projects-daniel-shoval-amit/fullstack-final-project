@@ -33,7 +33,7 @@ class MessageController extends baseController {
                 content: req.body.content,
             });
 
-            getIo()?.to(String(chatId)).emit('new_message', message);
+            getIo()?.to(message.chatId.toString()).emit('new_message', message.toJSON());
 
             res.status(201).json(message);
         } catch (error) {

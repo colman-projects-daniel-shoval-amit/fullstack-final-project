@@ -9,6 +9,7 @@ import { PostEditorPage } from '@/pages/PostEditorPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { MyPostsPage } from '@/pages/MyPostsPage';
 import { FollowingPage } from '@/pages/FollowingPage';
+import { MessagesPage } from '@/pages/MessagesPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useUser } from '@/context/UserContext';
@@ -38,6 +39,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my-posts" element={<MyPostsPage />} />
         <Route path="/following" element={<FollowingPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />

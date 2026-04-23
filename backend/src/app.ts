@@ -15,10 +15,8 @@ initApp().then((app) => {
 
     io.on('connection', (socket) => {
         socket.on('join_chat', (chatId: string) => {
-            socket.join(chatId);
+            socket.join(chatId.toString());
         });
-
-        socket.on('disconnect', () => {});
     });
 
     httpServer.listen(config.PORT, () => {

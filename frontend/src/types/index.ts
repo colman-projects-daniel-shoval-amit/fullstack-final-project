@@ -41,3 +41,18 @@ export interface RecommendedUser {
   _id: string;
   email: string;
 }
+
+export interface Message {
+  _id: string;
+  senderId: string;
+  chatId: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface Chat {
+  _id: string;
+  title: string;
+  participants: string[];
+  messages?: Message[];
+}

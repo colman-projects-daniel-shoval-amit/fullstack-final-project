@@ -75,7 +75,7 @@ export function PostEditorPage() {
       TableRow,
       TableHeader,
       TableCell,
-      Markdown.configure({ escapePatterns: false, linkify: true }),
+      Markdown.configure({ linkify: true }),
     ],
     editorProps: {
       attributes: {
@@ -145,7 +145,7 @@ export function PostEditorPage() {
       setText(post.text);
       if (editor) editor.commands.setContent(post.text);
       setCoverImage(post.image ?? '');
-      setSelectedTopicIds(post.topics ?? []);
+      setSelectedTopicIds((post.topics ?? []).map(t => (typeof t === 'object' ? t._id : t)));
       setIsLoadingPost(false);
     }).catch(() => navigate('/'));
   }, [id, isEditMode, userId, navigate, editor]);
