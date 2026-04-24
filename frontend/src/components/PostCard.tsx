@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Heart, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AuthorBadge } from '@/components/AuthorBadge';
-import { getDateFromId, resolveImageUrl } from '@/lib/utils';
+import { getDateFromId, resolveImageUrl, stripMarkdown } from '@/lib/utils';
 import type { Post } from '@/types';
 
 interface PostCardProps {
@@ -12,7 +12,8 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, authorEmail, authorId }: PostCardProps) {
-  const excerpt = post.text.length > 150 ? post.text.slice(0, 150) + '…' : post.text;
+  const excerptSource = post.summary ?? stripMarkdown(post.text);
+  const excerpt = excerptSource.length > 150 ? excerptSource.slice(0, 150) + '…' : excerptSource;
   const date = getDateFromId(post._id).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

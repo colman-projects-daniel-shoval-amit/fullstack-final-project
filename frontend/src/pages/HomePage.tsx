@@ -11,7 +11,7 @@ import { topicService } from '@/services/topicService';
 import { userService } from '@/services/userService';
 import type { Topic } from '@/services/topicService';
 import type { RecommendedUser } from '@/types';
-import { getDateFromId, resolveImageUrl } from '@/lib/utils';
+import { getDateFromId, resolveImageUrl, stripMarkdown } from '@/lib/utils';
 import type { Post } from '@/types';
 
 const LIMIT = 10;
@@ -197,7 +197,8 @@ export function HomePage() {
 }
 
 function FeaturedPostCard({ post, authorEmail, authorId }: { post: Post; authorEmail: string; authorId: string }) {
-  const excerpt = post.text.length > 200 ? post.text.slice(0, 200) + '…' : post.text;
+  const excerptSource = post.summary ?? stripMarkdown(post.text);
+  const excerpt = excerptSource.length > 200 ? excerptSource.slice(0, 200) + '…' : excerptSource;
   const date = getDateFromId(post._id).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
