@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useUser } from '@/context/UserContext';
+import { useChatNotification } from '@/context/ChatNotificationContext';
 import { chatService } from '@/services/chatService';
 import { useSocket } from '@/hooks/useSocket';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -19,6 +20,7 @@ import type { Chat, Message, User } from '@/types';
 export function MessagesPage() {
   const { profile } = useUser();
   const socket = useSocket();
+  const { markChatAsRead } = useChatNotification();
   const { chatId = null } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
 
@@ -66,6 +68,7 @@ export function MessagesPage() {
 
     // Optimistically clear the unread badge and persist server-side
     setChats(prev => prev.map(c => c._id === chatId ? { ...c, unreadCount: 0 } : c));
+    markChatAsRead(chatId);
     chatService.markChatRead(chatId).catch(() => {});
   }, [chatId, socket]);
 

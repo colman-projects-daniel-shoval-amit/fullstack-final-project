@@ -51,11 +51,12 @@ npm run preview  # Serve the production build locally
 
 ```
 src/
-├── main.tsx              # Entry — wraps app in AuthContext, UserContext, SideNavContext
+├── main.tsx              # Entry — wraps app in AuthContext, UserContext, ChatNotificationContext, SideNavContext
 ├── App.tsx               # React Router route definitions + AuthGuard + OnboardingGuard
 ├── context/
-│   ├── AuthContext.tsx   # JWT token state, login/register/logout, Google OAuth callback
-│   ├── UserContext.tsx   # Logged-in user profile, follow/unfollow, global profile cache
+│   ├── AuthContext.tsx              # JWT token state, login/register/logout, Google OAuth callback
+│   ├── UserContext.tsx              # Logged-in user profile, follow/unfollow, global profile cache
+│   ├── ChatNotificationContext.tsx  # Global unread-chat badge state (unreadChatIds Set, markChatAsRead)
 │   └── SideNavContext.tsx
 ├── hooks/
 │   └── useSocket.ts      # Socket.io-client singleton hook (autoConnect:false, Strict Mode safe)
@@ -67,7 +68,7 @@ src/
 │   ├── likeService.ts
 │   ├── userService.ts    # getMe, updateInterests, uploadAvatar, changePassword, follow/unfollow
 │   ├── topicService.ts
-│   └── chatService.ts    # getMyChats, getChatWithMessages, createChat, sendMessage, getAllUsers
+│   └── chatService.ts    # getMyChats, getChatWithMessages, createChat, sendMessage, markChatRead, getUnreadChatIds
 ├── pages/
 │   ├── AuthPage.tsx          # Login / register tabs
 │   ├── GoogleCallbackPage.tsx
@@ -84,13 +85,16 @@ src/
 │   ├── AuthGuard.tsx         # Redirects unauthenticated users to /auth
 │   ├── PageLayout.tsx        # Navbar + SideNav wrapper
 │   ├── Navbar.tsx
-│   ├── SideNav.tsx
+│   ├── SideNav.tsx            # Nav links + global unread-message badge from ChatNotificationContext
 │   ├── PostCard.tsx
 │   ├── PostCardSkeleton.tsx
-│   ├── AuthorBadge.tsx       # Avatar + email + follow button inline
+│   ├── AuthorBadge.tsx        # Avatar + email + follow button inline
 │   ├── CommentItem.tsx
+│   ├── UserAvatar.tsx         # Renders avatar image or initial-letter fallback
 │   ├── MarkdownRenderer.tsx
-│   └── ui/                   # Radix-based design system (Button, Card, Dialog, Input…)
+│   ├── profile/
+│   │   └── ChangePasswordModal.tsx  # Radix Dialog for password change with success state
+│   └── ui/                    # Radix-based design system (Button, Card, Dialog, Input…)
 ├── types/
 │   └── index.ts              # Shared TypeScript interfaces (Post, User, UserProfile, …)
 └── lib/
@@ -153,6 +157,18 @@ The active chat ID lives in the URL (`/messages/:chatId?`) rather than component
 ### Duplicate chat prevention
 
 `POST /chats` uses a `$all + $size: 2` Mongoose query to find an existing 1-on-1 chat before creating a new one, returning `200` for an existing chat and `201` for a new one. The frontend redirect works identically for both.
+
+### WhatsApp-style read receipts & unread badges
+
+Each `Message` document has a `readBy` array. The sender's ID is added automatically on creation so the sender never sees their own message as unread.
+
+- **Per-chat badge**: `GET /chats` returns `unreadCount` for each chat (messages not in `readBy` for the requesting user). `MessagesPage` renders a pill badge per chat row.
+- **Global sidebar badge**: `ChatNotificationContext` fetches `GET /chats/unread` on mount and listens to `chat_list_update` socket events. `SideNav` reads `unreadChatIds.size` from the context and shows a pill badge on the Messages nav item, visible from every page.
+- **Marking as read**: Opening a chat calls `PUT /chats/:id/read` (REST) and `markChatAsRead(chatId)` (context) simultaneously. The context removes the chatId from `unreadChatIds` immediately so the global badge updates without waiting for a round-trip.
+
+### Change Password modal
+
+`ProfilePage` delegates password changes to `ChangePasswordModal` — a Radix Dialog with three inputs (current, new, confirm), client-side validation, and a success state that shows a green `CheckCircle2` banner and auto-closes after 2 seconds. A `useRef` timer is cancelled if the user manually dismisses the dialog.
 
 ### Path alias
 

@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, User, BookOpen, Users, LogOut, PenSquare, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useSideNav } from '@/context/SideNavContext';
+import { useChatNotification } from '@/context/ChatNotificationContext';
 import { Separator } from '@/components/ui/separator';
 
 const navItems = [
@@ -16,7 +17,9 @@ const navItems = [
 export function SideNav() {
   const { token, logout } = useAuth();
   const { open } = useSideNav();
+  const { unreadChatIds } = useChatNotification();
   const navigate = useNavigate();
+  const unreadCount = unreadChatIds.size;
 
   const email = (() => {
     if (!token) return null;
@@ -55,6 +58,11 @@ export function SideNav() {
             >
               <Icon className="w-4 h-4 shrink-0" />
               {label}
+              {to === '/messages' && unreadCount > 0 && (
+                <span className="ml-auto min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                  {unreadCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

@@ -30,4 +30,9 @@ export const chatService = {
   async markChatRead(chatId: string): Promise<void> {
     await api.put(`/chats/${chatId}/read`);
   },
+
+  async getUnreadChatIds(): Promise<string[]> {
+    const res = await api.get<{ unreadChatIds: string[] }>('/chats/unread');
+    return res.data.unreadChatIds;
+  },
 };

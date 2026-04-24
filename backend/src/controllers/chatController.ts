@@ -113,9 +113,24 @@ class ChatController extends baseController {
         super.create(req, res);
     }
 
+    async getUnreadChatIds(req: AuthRequest, res: Response): Promise<void> {
+        const userId = String(req.user?._id);
+        try {
+            const userChats = await ChatModel.find({ participants: userId }, '_id').lean();
+            const chatIds = userChats.map(c => c._id);
+            const unreadChatIds = await MessageModel.distinct('chatId', {
+                chatId: { $in: chatIds },
+                readBy: { $nin: [userId] },
+            });
+            res.json({ unreadChatIds: unreadChatIds.map(String) });
+        } catch (error) {
+            this.handleError(res, error);
+        }
+    }
+
     async markRead(req: AuthRequest, res: Response) {
         const chatId = req.params.chatId;
-        const userId = req.user?._id;
+        const userId = req.user!._id;
         try {
             const chat = await ChatModel.findById(chatId).lean();
             if (!chat) return res.status(404).json({ error: 'Chat not found' });

@@ -95,8 +95,8 @@ Test files live in `src/tests/`:
 | `comments.test.ts` | Comment CRUD |
 | `likes.test.ts` | Like / unlike |
 | `user.test.ts` | Profile, follow/unfollow, password change, recommended users |
-| `chats.test.ts` | Chat room creation and retrieval |
-| `messages.test.ts` | Message creation and retrieval |
+| `chats.test.ts` | Chat CRUD, deduplication, `GET /chats/unread`, `PUT /chats/:id/read` with auth + participant checks |
+| `messages.test.ts` | Message creation (`readBy` field), participant enforcement, delete authorization |
 | `socket.test.ts` | Socket.io real-time broadcasts (`new_message`, `chat_list_update`) |
 
 ## Real-Time Chat Architecture
@@ -225,13 +225,16 @@ Uploaded files are served as static assets from `/uploads/<filename>`.
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/chats` | List chats |
-| GET | `/chats/user/:userId` | Get chats for a user |
-| POST | `/chats` | Create a chat room |
-| DELETE | `/chats/:id` | Delete a chat |
-| GET | `/messages` | List messages |
-| POST | `/messages` | Send a message |
-| DELETE | `/messages/:id` | Delete a message |
+| GET | `/chats` | List own chats (populated participants, `unreadCount` per chat) |
+| GET | `/chats/unread` | Returns `{ unreadChatIds }` — chat IDs with at least one unread message |
+| GET | `/chats/user/:userId` | Get chats for a user (caller must be that user) |
+| GET | `/chats/:id` | Get chat with messages (participant-only) |
+| POST | `/chats` | Create a chat room (deduplicates 1-on-1 chats, returns 200 if exists) |
+| PUT | `/chats/:id/read` | Mark all messages in a chat as read for the caller |
+| DELETE | `/chats/:id` | Delete a chat (participant-only) |
+| GET | `/messages` | List messages (scoped to caller's chats) |
+| POST | `/messages` | Send a message (adds sender to `readBy` automatically) |
+| DELETE | `/messages/:id` | Delete a message (sender-only) |
 
 ### Topics — `/topics`
 

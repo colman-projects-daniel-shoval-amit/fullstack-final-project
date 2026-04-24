@@ -44,7 +44,8 @@ class MessageController extends baseController {
     }
 
     async create(req: AuthRequest, res: Response) {
-        req.body.senderId = req.user?._id;
+        const userId = req.user!._id;
+        req.body.senderId = userId;
         const chatId = req.body.chatId;
 
         try {
@@ -54,16 +55,16 @@ class MessageController extends baseController {
                 return;
             }
 
-            if (!chat.participants.some(p => String(p) === req.user?._id)) {
+            if (!chat.participants.some(p => String(p) === String(userId))) {
                 res.status(403).json({ error: "Not a participant of this chat" });
                 return;
             }
 
             const message = await MessageModel.create({
-                senderId: req.user?._id,
+                senderId: userId,
                 chatId,
                 content: req.body.content,
-                readBy: [req.user?._id],
+                readBy: [userId],
             });
 
             await ChatModel.findByIdAndUpdate(chatId, {
