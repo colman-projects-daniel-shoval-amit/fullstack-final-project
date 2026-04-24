@@ -32,10 +32,12 @@ export function MessagesPage() {
   const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  // Mirror chats state into a ref so socket event handlers can read the
-  // current list without capturing a stale closure value.
+  // Refs mirror state so socket handlers always read the latest values
+  // without capturing stale closure values.
   const chatsRef = useRef<Chat[]>([]);
+  const chatIdRef = useRef<string | null>(null);
   useEffect(() => { chatsRef.current = chats; }, [chats]);
+  useEffect(() => { chatIdRef.current = chatId; }, [chatId]);
 
   // Load user's chats on mount
   useEffect(() => {
@@ -61,6 +63,10 @@ export function MessagesPage() {
       .finally(() => setIsLoadingMessages(false));
 
     socket.emit('join_chat', chatId);
+
+    // Optimistically clear the unread badge and persist server-side
+    setChats(prev => prev.map(c => c._id === chatId ? { ...c, unreadCount: 0 } : c));
+    chatService.markChatRead(chatId).catch(() => {});
   }, [chatId, socket]);
 
   // Rejoin both rooms after a socket reconnect
@@ -87,21 +93,37 @@ export function MessagesPage() {
     return () => { socket.off('new_message', handleNewMessage); };
   }, [socket, chatId]);
 
-  // chat_list_update: bump an existing chat to the top, or fetch + insert a
-  // brand-new chat (i.e. the receiving end of a first message).
+  // chat_list_update: update latestMessage + unreadCount, bump to top.
+  // If the chat is new (first message), fetch it and subscribe to the room.
   useEffect(() => {
     function handleChatListUpdate(msg: Message) {
-      if (chatsRef.current.some(c => c._id === msg.chatId)) {
-        bumpChatToTop(msg.chatId);
+      const isActive = chatIdRef.current === msg.chatId;
+      const existingIdx = chatsRef.current.findIndex(c => c._id === msg.chatId);
+
+      if (existingIdx >= 0) {
+        setChats(prev => {
+          const idx = prev.findIndex(c => c._id === msg.chatId);
+          if (idx < 0) return prev;
+          const updated: Chat = {
+            ...prev[idx],
+            latestMessage: msg,
+            unreadCount: isActive ? 0 : (prev[idx].unreadCount ?? 0) + 1,
+          };
+          const next = [...prev];
+          next.splice(idx, 1);
+          next.unshift(updated);
+          return next;
+        });
+        if (isActive) chatService.markChatRead(msg.chatId).catch(() => {});
       } else {
         chatService.getChatWithMessages(msg.chatId)
           .then(newChat => {
             setChats(prev => {
               if (prev.some(c => c._id === newChat._id)) return prev;
-              return [newChat, ...prev];
+              return [{ ...newChat, unreadCount: isActive ? 0 : 1 }, ...prev];
             });
-            // Subscribe to live events for this newly discovered room
             socket.emit('join_chat', newChat._id);
+            if (isActive) chatService.markChatRead(newChat._id).catch(() => {});
           })
           .catch(() => {});
       }
@@ -125,7 +147,15 @@ export function MessagesPage() {
       // Deduplicate: if the socket event arrived before the REST response
       // resolved, the message is already in state — don't add it twice.
       setMessages(prev => prev.some(m => m._id === sent._id) ? prev : [...prev, sent]);
-      bumpChatToTop(chatId);
+      setChats(prev => {
+        const idx = prev.findIndex(c => c._id === chatId);
+        if (idx < 0) return prev;
+        const updated: Chat = { ...prev[idx], latestMessage: sent };
+        const next = [...prev];
+        next.splice(idx, 1);
+        next.unshift(updated);
+        return next;
+      });
     } catch {
       setInputText(text);
     } finally {
@@ -174,16 +204,6 @@ export function MessagesPage() {
     }
   }
 
-  function bumpChatToTop(cId: string) {
-    setChats(prev => {
-      const idx = prev.findIndex(c => c._id === cId);
-      if (idx <= 0) return prev;
-      const next = [...prev];
-      next.unshift(next.splice(idx, 1)[0]);
-      return next;
-    });
-  }
-
   const activeChat = chats.find(c => c._id === chatId);
 
   return (
@@ -208,17 +228,34 @@ export function MessagesPage() {
               chats.map(chat => {
                 const displayName = getChatDisplayName(chat, profile?._id);
                 const avatarSrc = getChatAvatar(chat, profile?._id);
+                const unread = chat.unreadCount ?? 0;
                 return (
                   <button
                     key={chat._id}
                     onClick={() => navigate('/messages/' + chat._id)}
                     className={`w-full text-left px-4 py-3 text-sm transition-colors hover:bg-muted/50 ${
-                      chat._id === chatId ? 'bg-muted font-medium' : 'text-muted-foreground'
+                      chat._id === chatId ? 'bg-muted' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <UserAvatar email={displayName} avatar={avatarSrc} className="w-8 h-8 bg-primary/10 text-primary text-xs" />
-                      <span className="truncate">{displayName}</span>
+                      <UserAvatar email={displayName} avatar={avatarSrc} className="w-9 h-9 bg-primary/10 text-primary text-xs shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className={`truncate text-sm ${unread > 0 ? 'font-semibold text-foreground' : 'text-foreground/80'}`}>
+                            {displayName}
+                          </span>
+                          {unread > 0 && (
+                            <span className="shrink-0 min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                              {unread}
+                            </span>
+                          )}
+                        </div>
+                        {chat.latestMessage && (
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {chat.latestMessage.content}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </button>
                 );

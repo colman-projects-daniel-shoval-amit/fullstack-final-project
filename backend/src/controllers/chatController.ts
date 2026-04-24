@@ -13,13 +13,25 @@ class ChatController extends baseController {
     async get(req: AuthRequest, res: Response): Promise<void> {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
+        const userId = String(req.user?._id);
         try {
             const chats = await ChatModel.find({ participants: req.user?._id })
                 .populate('participants', '_id email avatar')
+                .populate('latestMessage')
                 .sort({ updatedAt: -1 })
                 .skip((page - 1) * limit)
-                .limit(limit);
-            res.json(chats);
+                .limit(limit)
+                .lean();
+            const chatsWithUnread = await Promise.all(
+                chats.map(async chat => {
+                    const unreadCount = await MessageModel.countDocuments({
+                        chatId: chat._id,
+                        readBy: { $nin: [userId] },
+                    });
+                    return { ...chat, unreadCount };
+                })
+            );
+            res.json(chatsWithUnread);
         } catch (error) {
             this.handleError(res, error);
         }
@@ -34,8 +46,19 @@ class ChatController extends baseController {
         try {
             const chats = await ChatModel.find({ participants: userId })
                 .populate('participants', '_id email avatar')
-                .sort({ updatedAt: -1 });
-            res.json(chats);
+                .populate('latestMessage')
+                .sort({ updatedAt: -1 })
+                .lean();
+            const chatsWithUnread = await Promise.all(
+                chats.map(async chat => {
+                    const unreadCount = await MessageModel.countDocuments({
+                        chatId: chat._id,
+                        readBy: { $nin: [userId] },
+                    });
+                    return { ...chat, unreadCount };
+                })
+            );
+            res.json(chatsWithUnread);
         } catch (error) {
             this.handleError(res, error);
         }
@@ -88,6 +111,26 @@ class ChatController extends baseController {
         }
 
         super.create(req, res);
+    }
+
+    async markRead(req: AuthRequest, res: Response) {
+        const chatId = req.params.chatId;
+        const userId = req.user?._id;
+        try {
+            const chat = await ChatModel.findById(chatId).lean();
+            if (!chat) return res.status(404).json({ error: 'Chat not found' });
+            const participantIds = chat.participants.map(p => String((p as any)._id ?? p));
+            if (!participantIds.includes(String(userId))) {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+            await MessageModel.updateMany(
+                { chatId, readBy: { $nin: [userId] } },
+                { $push: { readBy: userId } }
+            );
+            res.json({ ok: true });
+        } catch (error) {
+            this.handleError(res, error);
+        }
     }
 
     async delete(req: AuthRequest, res: Response) {

@@ -157,6 +157,7 @@ chatRouter.post("/", chatController.create.bind(chatController));
  *       404:
  *         description: The chat was not found
  */
+chatRouter.put("/:chatId/read", chatController.markRead.bind(chatController));
 chatRouter.delete("/:id", chatController.delete.bind(chatController));
 
 export default chatRouter;

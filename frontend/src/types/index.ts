@@ -56,5 +56,7 @@ export interface Chat {
   _id: string;
   title: string;
   participants: (string | { _id: string; email: string; avatar?: string })[];
+  latestMessage?: Message;
+  unreadCount?: number;
   messages?: Message[];
 }

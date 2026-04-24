@@ -5,6 +5,7 @@ export interface IMessage extends Document {
     chatId: mongoose.Types.ObjectId;
     content: string;
     timestamp: Date;
+    readBy: mongoose.Types.ObjectId[];
 }
 
 const messageSchema = new Schema<IMessage>({
@@ -25,7 +26,12 @@ const messageSchema = new Schema<IMessage>({
     timestamp: {
         type: Date,
         default: Date.now,
-    }
+    },
+    readBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: [],
+    }],
 });
 
 const MessageModel = mongoose.model<IMessage>("Message", messageSchema);

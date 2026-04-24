@@ -26,4 +26,8 @@ export const chatService = {
     const res = await api.get<User[]>('/users', { params: { limit: 100 } });
     return res.data;
   },
+
+  async markChatRead(chatId: string): Promise<void> {
+    await api.put(`/chats/${chatId}/read`);
+  },
 };

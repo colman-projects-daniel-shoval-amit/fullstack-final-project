@@ -63,9 +63,12 @@ class MessageController extends baseController {
                 senderId: req.user?._id,
                 chatId,
                 content: req.body.content,
+                readBy: [req.user?._id],
             });
 
-            await ChatModel.findByIdAndUpdate(chatId, { $set: { updatedAt: new Date() } });
+            await ChatModel.findByIdAndUpdate(chatId, {
+                $set: { updatedAt: new Date(), latestMessage: message._id },
+            });
 
             const io = getIo();
             const payload = message.toJSON();
