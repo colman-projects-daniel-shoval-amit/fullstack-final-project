@@ -26,6 +26,7 @@ class PostController extends baseController {
         try {
             const data = await PostModel.find(filter)
                 .populate('authorId', 'email avatar')
+                .sort({ _id: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit);
             res.json(data);
