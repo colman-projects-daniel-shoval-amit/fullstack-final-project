@@ -8,10 +8,9 @@ interface AuthorBadgeProps {
   date: string;
   authorId?: string;
   showFollow?: boolean;
-  isCurrentUser?: boolean;
 }
 
-export function AuthorBadge({ email, date, authorId, showFollow = false, isCurrentUser = false }: AuthorBadgeProps) {
+export function AuthorBadge({ email, date, authorId, showFollow = false }: AuthorBadgeProps) {
   const { isFollowing, follow, unfollow, profile } = useUser();
   const { startChat, isLoading: isChatLoading } = useStartChat();
   const following = authorId ? isFollowing(authorId) : false;
@@ -33,7 +32,6 @@ export function AuthorBadge({ email, date, authorId, showFollow = false, isCurre
 
   async function handleMessageClick(e: React.MouseEvent) {
     e.preventDefault();
-    e.stopPropagation();
     if (!authorId) return;
     await startChat(authorId, `Chat with ${email}`);
   }
@@ -45,7 +43,7 @@ export function AuthorBadge({ email, date, authorId, showFollow = false, isCurre
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-medium text-foreground">{email}</span>
-        {showFollow && !isCurrentUser && !isSelf && !!authorId && (
+        {showFollow && !isSelf && !!authorId && (
           <button
             type="button"
             onClick={handleFollowClick}

@@ -15,16 +15,24 @@ export function CommentItem({ comment, authorEmail, currentUserId, onDelete }: C
   const { startChat, isLoading } = useStartChat();
   const canMessage = !!comment.authorId && comment.authorId !== currentUserId;
 
+  const avatarClass = "w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium shrink-0";
+  const initial = authorEmail[0]?.toUpperCase() ?? '?';
+
   return (
     <div className="flex gap-3 py-4 border-b last:border-0">
-      <div
-        className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium shrink-0 ${canMessage ? 'cursor-pointer hover:opacity-70 transition-opacity' : ''}`}
-        onClick={canMessage && !isLoading ? () => startChat(comment.authorId, `Chat with ${authorEmail}`) : undefined}
-        title={canMessage ? 'Send message' : undefined}
-        role={canMessage ? 'button' : undefined}
-      >
-        {authorEmail[0]?.toUpperCase() ?? '?'}
-      </div>
+      {canMessage ? (
+        <button
+          type="button"
+          className={`${avatarClass} cursor-pointer hover:opacity-70 transition-opacity disabled:opacity-40`}
+          onClick={() => startChat(comment.authorId, `Chat with ${authorEmail}`)}
+          disabled={isLoading}
+          title="Send message"
+        >
+          {initial}
+        </button>
+      ) : (
+        <div className={avatarClass}>{initial}</div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium truncate">{authorEmail}</span>

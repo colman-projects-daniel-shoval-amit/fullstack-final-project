@@ -9,8 +9,27 @@ class ChatController extends baseController {
         super(ChatModel);
     }
 
+    // Vuln 6 fix: scope GET /chats to the authenticated user's own chats
+    async get(req: AuthRequest, res: Response): Promise<void> {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        try {
+            const chats = await ChatModel.find({ participants: req.user?._id })
+                .sort({ updatedAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit);
+            res.json(chats);
+        } catch (error) {
+            this.handleError(res, error);
+        }
+    }
+
+    // Vuln 4 fix: enforce that the caller can only request their own chat list
     async getByUserId(req: AuthRequest, res: Response) {
         const userId = req.params.userId;
+        if (String(req.user?._id) !== userId) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
         try {
             const chats = await ChatModel.find({ participants: userId }).sort({ updatedAt: -1 });
             res.json(chats);
@@ -19,12 +38,16 @@ class ChatController extends baseController {
         }
     }
 
+    // Vuln 5 fix: verify the caller is a participant before returning the chat + messages
     async getById(req: AuthRequest, res: Response) {
         const id = req.params.id;
         try {
             const chat = await ChatModel.findById(id).lean();
             if (!chat) {
                 return res.status(404).json({ error: "Chat not found" });
+            }
+            if (!chat.participants.some(p => String(p) === String(req.user?._id))) {
+                return res.status(403).json({ error: "Forbidden" });
             }
             const messages = await MessageModel.find({ chatId: id });
             res.json({ ...chat, messages });
@@ -70,7 +93,6 @@ class ChatController extends baseController {
             if (!chat) {
                 return res.status(404).json({ error: "Chat not found" });
             }
-            // Check if user is a participant before allowing delete
             if (!chat.participants.some(p => String(p) === userId)) {
                 return res.status(403).json({ error: "Unauthorized" });
             }

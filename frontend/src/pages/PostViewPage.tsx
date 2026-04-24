@@ -191,7 +191,7 @@ export function PostViewPage() {
           <div className="mb-6">
             <h1 className="text-4xl font-bold leading-tight mb-4 break-words">{post.title}</h1>
             <div className="flex items-center justify-between">
-              <AuthorBadge email={authorEmail} date={date} authorId={postAuthorId} showFollow isCurrentUser={isAuthor} />
+              <AuthorBadge email={authorEmail} date={date} authorId={postAuthorId} showFollow />
               {isAuthor && (
                 <div className="flex items-center gap-2">
                   <Button asChild variant="outline" size="sm">
