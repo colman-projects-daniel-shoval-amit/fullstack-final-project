@@ -13,6 +13,7 @@ import {
 import { useUser } from '@/context/UserContext';
 import { chatService } from '@/services/chatService';
 import { useSocket } from '@/hooks/useSocket';
+import { UserAvatar } from '@/components/UserAvatar';
 import type { Chat, Message, User } from '@/types';
 
 export function MessagesPage() {
@@ -206,6 +207,7 @@ export function MessagesPage() {
             ) : (
               chats.map(chat => {
                 const displayName = getChatDisplayName(chat, profile?._id);
+                const avatarSrc = getChatAvatar(chat, profile?._id);
                 return (
                   <button
                     key={chat._id}
@@ -215,9 +217,7 @@ export function MessagesPage() {
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
-                        {displayName[0]?.toUpperCase() ?? '#'}
-                      </div>
+                      <UserAvatar email={displayName} avatar={avatarSrc} className="w-8 h-8 bg-primary/10 text-primary text-xs" />
                       <span className="truncate">{displayName}</span>
                     </div>
                   </button>
@@ -231,7 +231,14 @@ export function MessagesPage() {
         {chatId ? (
           <div className="flex flex-col flex-1 min-w-0">
             {/* Header */}
-            <div className="px-5 py-3 border-b shrink-0">
+            <div className="px-5 py-3 border-b shrink-0 flex items-center gap-2.5">
+              {activeChat && (
+                <UserAvatar
+                  email={getChatDisplayName(activeChat, profile?._id)}
+                  avatar={getChatAvatar(activeChat, profile?._id)}
+                  className="w-8 h-8 bg-primary/10 text-primary text-xs"
+                />
+              )}
               <p className="font-semibold text-sm">{activeChat ? getChatDisplayName(activeChat, profile?._id) : '…'}</p>
             </div>
 
@@ -323,9 +330,18 @@ function getChatDisplayName(chat: Chat, currentUserId: string | null | undefined
     const id = typeof p === 'string' ? p : p._id;
     return id !== currentUserId;
   });
-  const named = others.filter((p): p is { _id: string; email: string } => typeof p !== 'string');
+  const named = others.filter((p): p is { _id: string; email: string; avatar?: string } => typeof p !== 'string');
   if (named.length === 0) return chat.title;
   return named.map(p => p.email).join(', ');
+}
+
+function getChatAvatar(chat: Chat, currentUserId: string | null | undefined): string | undefined {
+  const others = chat.participants.filter(p => {
+    const id = typeof p === 'string' ? p : p._id;
+    return id !== currentUserId;
+  });
+  const named = others.filter((p): p is { _id: string; email: string; avatar?: string } => typeof p !== 'string');
+  return named[0]?.avatar;
 }
 
 function MessageBubble({ message, isMine }: { message: Message; isMine: boolean }) {

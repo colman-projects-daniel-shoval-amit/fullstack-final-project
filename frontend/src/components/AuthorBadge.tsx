@@ -2,20 +2,21 @@ import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { useStartChat } from '@/hooks/useStartChat';
+import { UserAvatar } from '@/components/UserAvatar';
 
 interface AuthorBadgeProps {
   email: string;
   date: string;
   authorId?: string;
+  avatar?: string;
   showFollow?: boolean;
 }
 
-export function AuthorBadge({ email, date, authorId, showFollow = false }: AuthorBadgeProps) {
+export function AuthorBadge({ email, date, authorId, avatar, showFollow = false }: AuthorBadgeProps) {
   const { isFollowing, follow, unfollow, profile } = useUser();
   const { startChat, isLoading: isChatLoading } = useStartChat();
   const following = authorId ? isFollowing(authorId) : false;
   const [isPending, setIsPending] = useState(false);
-  const initial = email ? email[0].toUpperCase() : '?';
   const isSelf = !!(authorId && profile?._id === authorId);
 
   async function handleFollowClick(e: React.MouseEvent) {
@@ -38,9 +39,7 @@ export function AuthorBadge({ email, date, authorId, showFollow = false }: Autho
 
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-full bg-muted text-foreground flex items-center justify-center text-sm font-semibold shrink-0 select-none">
-        {initial}
-      </div>
+      <UserAvatar email={email} avatar={avatar} className="w-8 h-8 bg-muted text-foreground text-sm" />
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-medium text-foreground">{email}</span>
         {showFollow && !isSelf && !!authorId && (

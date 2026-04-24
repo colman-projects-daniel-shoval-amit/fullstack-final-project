@@ -18,6 +18,7 @@ export function PostCard({ post, authorEmail, authorId }: PostCardProps) {
     day: 'numeric',
     year: 'numeric',
   });
+  const authorAvatar = typeof post.authorId === 'object' ? post.authorId.avatar : undefined;
 
   return (
     <Link to={`/posts/${post._id}`} className="block group">
@@ -30,7 +31,7 @@ export function PostCard({ post, authorEmail, authorId }: PostCardProps) {
           />
         )}
         <CardHeader className="flex-none">
-          <AuthorBadge email={authorEmail} date={date} authorId={authorId} />
+          <AuthorBadge email={authorEmail} date={date} authorId={authorId} avatar={authorAvatar} />
           <CardTitle className="text-lg leading-snug line-clamp-2 mt-2">
             {post.title}
           </CardTitle>

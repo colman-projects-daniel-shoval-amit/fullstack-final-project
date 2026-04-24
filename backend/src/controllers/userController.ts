@@ -15,8 +15,8 @@ class UserController extends BaseController {
         try {
             const user = await UserModel.findById(req.user?._id)
                 .populate('interests', 'name slug')
-                .populate('following', 'email')
-                .populate('followers', 'email');
+                .populate('following', 'email avatar')
+                .populate('followers', 'email avatar');
             if (!user) return res.status(404).json({ error: 'User not found' });
             res.json(user);
         } catch (error) {
@@ -118,7 +118,7 @@ class UserController extends BaseController {
             if (self?.interests?.length) {
                 matchedIds = await PostModel.distinct('authorId', { topics: { $in: self.interests } });
                 const filteredIds = matchedIds.filter(id => id.toString() !== String(selfId));
-                matchedUsers = await UserModel.find({ _id: { $in: filteredIds } }).limit(5).select('email');
+                matchedUsers = await UserModel.find({ _id: { $in: filteredIds } }).limit(5).select('email avatar');
             }
 
             const remaining = 5 - matchedUsers.length;
@@ -126,7 +126,7 @@ class UserController extends BaseController {
             if (remaining > 0) {
                 otherUsers = await UserModel.find({
                     _id: { $nin: [...matchedIds, selfId] },
-                }).limit(remaining).select('email');
+                }).limit(remaining).select('email avatar');
             }
 
             res.json([...matchedUsers, ...otherUsers]);

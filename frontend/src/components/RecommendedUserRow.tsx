@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { useStartChat } from '@/hooks/useStartChat';
+import { UserAvatar } from '@/components/UserAvatar';
 import type { RecommendedUser } from '@/types';
 
 export function RecommendedUserRow({ user }: { user: RecommendedUser }) {
@@ -23,9 +24,7 @@ export function RecommendedUserRow({ user }: { user: RecommendedUser }) {
 
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-full bg-muted text-foreground flex items-center justify-center text-sm font-semibold shrink-0 select-none">
-        {user.email?.[0]?.toUpperCase() ?? '?'}
-      </div>
+      <UserAvatar email={user.email} avatar={user.avatar} className="w-8 h-8 bg-muted text-foreground text-sm" />
       <span className="flex-1 text-sm text-foreground truncate">{user.email}</span>
       {!isSelf && (
         <button

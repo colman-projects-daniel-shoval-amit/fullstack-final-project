@@ -15,7 +15,7 @@ class ChatController extends baseController {
         const limit = parseInt(req.query.limit as string) || 10;
         try {
             const chats = await ChatModel.find({ participants: req.user?._id })
-                .populate('participants', '_id email')
+                .populate('participants', '_id email avatar')
                 .sort({ updatedAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit);
@@ -33,7 +33,7 @@ class ChatController extends baseController {
         }
         try {
             const chats = await ChatModel.find({ participants: userId })
-                .populate('participants', '_id email')
+                .populate('participants', '_id email avatar')
                 .sort({ updatedAt: -1 });
             res.json(chats);
         } catch (error) {
@@ -45,7 +45,7 @@ class ChatController extends baseController {
     async getById(req: AuthRequest, res: Response) {
         const id = req.params.id;
         try {
-            const chat = await ChatModel.findById(id).populate('participants', '_id email').lean();
+            const chat = await ChatModel.findById(id).populate('participants', '_id email avatar').lean();
             if (!chat) {
                 return res.status(404).json({ error: "Chat not found" });
             }
