@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,17 +22,24 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Store the auto-close timer so we can cancel it on manual close.
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function clearForm() {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
     setError('');
-    setSuccess(false);
+    setSuccessMessage('');
   }
 
   function handleClose() {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
     clearForm();
     onClose();
   }
@@ -40,7 +47,6 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setSuccess(false);
 
     if (newPassword !== confirmPassword) {
       setError('New passwords do not match');
@@ -54,9 +60,16 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
     setIsSaving(true);
     try {
       await userService.changePassword(currentPassword, newPassword);
-      setSuccess(true);
-      clearForm();
-      setTimeout(onClose, 1200);
+      setError('');
+      setSuccessMessage('Password changed successfully!');
+      // Clear inputs immediately — no reason to keep them once saved
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      closeTimerRef.current = setTimeout(() => {
+        setSuccessMessage('');
+        onClose();
+      }, 2000);
     } catch (err: any) {
       setError(err?.response?.data?.error ?? 'Failed to update password');
     } finally {
@@ -69,59 +82,72 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Change password</DialogTitle>
-          <DialogDescription>
-            Enter your current password and choose a new one.
-          </DialogDescription>
+          {!successMessage && (
+            <DialogDescription>
+              Enter your current password and choose a new one.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          <div className="space-y-1">
-            <label className="text-sm text-muted-foreground">Current password</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={e => setCurrentPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+        {successMessage ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <CheckCircle2 className="w-12 h-12 text-green-500" />
+            <div className="bg-green-100 border border-green-400 text-green-700 rounded-md px-4 py-3 w-full text-sm font-medium">
+              {successMessage}
+            </div>
+            <p className="text-xs text-muted-foreground">This dialog will close automatically…</p>
           </div>
-          <div className="space-y-1">
-            <label className="text-sm text-muted-foreground">New password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm text-muted-foreground">Confirm new password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 py-2">
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">Current password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">New password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">Confirm new password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {success && <p className="text-sm text-green-600">Password updated successfully.</p>}
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
 
-          <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isSaving}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSaving}>
-              {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-              {isSaving ? 'Saving…' : 'Update password'}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={handleClose} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                {isSaving ? 'Saving…' : 'Update password'}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
