@@ -25,7 +25,8 @@ class PostController extends baseController {
         }
         try {
             const data = await PostModel.find(filter)
-                .populate('authorId', 'email')
+                .populate('authorId', 'email avatar')
+                .sort({ _id: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit);
             res.json(data);
@@ -37,7 +38,7 @@ class PostController extends baseController {
     async getById(req: Request, res: Response) {
         const id = req.params.id;
         try {
-            const data = await PostModel.findById(id).populate('authorId', 'email').populate('topics', 'name');
+            const data = await PostModel.findById(id).populate('authorId', 'email avatar').populate('topics', 'name');
             if (!data) {
                 return res.status(404).json({ error: "Post not found" });
             }

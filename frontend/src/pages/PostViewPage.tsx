@@ -25,6 +25,7 @@ export function PostViewPage() {
 
   const [post, setPost] = useState<Post | null>(null);
   const [authorEmail, setAuthorEmail] = useState('');
+  const [authorAvatar, setAuthorAvatar] = useState<string | undefined>();
   const [isLoadingPost, setIsLoadingPost] = useState(true);
 
   const [liked, setLiked] = useState(false);
@@ -36,6 +37,7 @@ export function PostViewPage() {
   const [hasMoreComments, setHasMoreComments] = useState(true);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, string>>({});
+  const [commentAvatars, setCommentAvatars] = useState<Record<string, string | undefined>>({});
 
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -51,6 +53,7 @@ export function PostViewPage() {
     postService.getPostById(id).then(async p => {
       setPost(p);
       setAuthorEmail(typeof p.authorId === 'object' ? p.authorId.email : '');
+      setAuthorAvatar(typeof p.authorId === 'object' ? p.authorId.avatar : undefined);
       setIsLoadingPost(false);
 
       if (userId) {
@@ -89,6 +92,11 @@ export function PostViewPage() {
         setCommentAuthors(prev => {
           const next = { ...prev };
           unknownIds.forEach((uid, i) => { next[uid] = users[i].email; });
+          return next;
+        });
+        setCommentAvatars(prev => {
+          const next = { ...prev };
+          unknownIds.forEach((uid, i) => { next[uid] = users[i].avatar; });
           return next;
         });
       }
@@ -138,6 +146,7 @@ export function PostViewPage() {
       if (userId && !commentAuthors[comment.authorId]) {
         const user = await userService.getUserById(comment.authorId);
         setCommentAuthors(prev => ({ ...prev, [comment.authorId]: user.email }));
+        setCommentAvatars(prev => ({ ...prev, [comment.authorId]: user.avatar }));
       }
     } finally {
       setIsSubmittingComment(false);
@@ -191,7 +200,7 @@ export function PostViewPage() {
           <div className="mb-6">
             <h1 className="text-4xl font-bold leading-tight mb-4 break-words">{post.title}</h1>
             <div className="flex items-center justify-between">
-              <AuthorBadge email={authorEmail} date={date} authorId={postAuthorId} showFollow isCurrentUser={isAuthor} />
+              <AuthorBadge email={authorEmail} date={date} authorId={postAuthorId} avatar={authorAvatar} showFollow />
               {isAuthor && (
                 <div className="flex items-center gap-2">
                   <Button asChild variant="outline" size="sm">
@@ -275,6 +284,7 @@ export function PostViewPage() {
               key={comment._id}
               comment={comment}
               authorEmail={commentAuthors[comment.authorId] ?? '…'}
+              authorAvatar={commentAvatars[comment.authorId]}
               currentUserId={userId}
               onDelete={handleDeleteComment}
             />

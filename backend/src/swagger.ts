@@ -73,7 +73,21 @@ const options: swaggerJsdoc.Options = {
                     properties: {
                         _id: { type: 'string', example: '697a9cd91b8ac38b2cde5352' },
                         title: { type: 'string', example: 'Group Chat' },
-                        participants: { type: 'array', items: { type: 'string', example: '697a92d4725f95ca20e1300c' } },
+                        participants: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    _id: { type: 'string', example: '697a92d4725f95ca20e1300c' },
+                                    email: { type: 'string', example: 'alice@example.com' },
+                                    avatar: { type: 'string', example: '/uploads/avatar.jpg' },
+                                },
+                            },
+                        },
+                        latestMessage: { type: 'string', nullable: true, description: 'ObjectId ref to the most recent Message', example: '697a9cd91b8ac38b2cde5399' },
+                        unreadCount: { type: 'integer', description: 'Number of messages not yet read by the requesting user', example: 3 },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        createdAt: { type: 'string', format: 'date-time' },
                     },
                 },
                 Message: {
@@ -85,6 +99,11 @@ const options: swaggerJsdoc.Options = {
                         chatId: { type: 'string', example: '697a65f59de97b4c60af618d60d0fe4f5311236168a109cb' },
                         content: { type: 'string', example: 'Hello everyone!' },
                         timestamp: { type: 'string', format: 'date-time' },
+                        readBy: {
+                            type: 'array',
+                            description: 'IDs of users who have read this message. The sender is added automatically on creation.',
+                            items: { type: 'string', example: '697a92d4725f95ca20e1300c' },
+                        },
                     },
                 },
             },

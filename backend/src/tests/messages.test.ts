@@ -57,6 +57,10 @@ describe("Message Tests", () => {
         expect(response.body.senderId).toBe(loginUser1._id);
         expect(response.body.chatId).toBe(chatId);
         expect(response.body.content).toBe("Hello Chat!");
+        // Sender is automatically added to readBy so they never see their own message as unread
+        expect(Array.isArray(response.body.readBy)).toBe(true);
+        expect(response.body.readBy).toContain(loginUser1._id);
+        expect(response.body.readBy).not.toContain(loginUser2._id);
         messageId = response.body._id;
     });
 

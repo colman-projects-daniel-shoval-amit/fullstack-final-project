@@ -1,7 +1,7 @@
 export interface Post {
   _id: string;
   title: string;
-  authorId: string | { _id: string; email: string };
+  authorId: string | { _id: string; email: string; avatar?: string };
   text: string;
   image?: string;
   commentsCount: number;
@@ -26,6 +26,7 @@ export interface Like {
 export interface User {
   _id: string;
   email: string;
+  avatar?: string;
 }
 
 export interface UserProfile {
@@ -40,4 +41,22 @@ export interface UserProfile {
 export interface RecommendedUser {
   _id: string;
   email: string;
+  avatar?: string;
+}
+
+export interface Message {
+  _id: string;
+  senderId: string;
+  chatId: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface Chat {
+  _id: string;
+  title: string;
+  participants: (string | { _id: string; email: string; avatar?: string })[];
+  latestMessage?: Message;
+  unreadCount?: number;
+  messages?: Message[];
 }

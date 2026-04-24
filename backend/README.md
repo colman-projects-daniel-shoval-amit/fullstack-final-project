@@ -50,12 +50,27 @@ All variables are validated with Zod at startup; the process exits immediately i
 ## Development
 
 ```bash
-npm run dev          # Start with auto-reload (tsx watch src/app.ts)
-npm run seed:topics  # Seed topic categories into MongoDB
+npm run dev       # Start with auto-reload (tsx watch src/app.ts)
+npm run seed:all  # Populate the database with demo data (see below)
 ```
 
 The server starts on `http://localhost:5000` by default.  
 Swagger UI is available at `http://localhost:5000/api-docs`.
+
+### Seeding demo data
+
+```bash
+cd backend
+npm run seed:all
+```
+
+`seed:all` is the single master seeder. It inserts:
+
+- **45 topic categories** (Technology, Design, Science, etc.)
+- **4 demo users** — the primary account is `jhhojh10@gmail.com` / `qwe123`
+- **10 blog posts** with rich Markdown content (headings, code blocks, tables)
+- **~26 comments** distributed across posts
+- Pre-wired follow relationships between demo users
 
 ## Testing
 
@@ -67,28 +82,58 @@ npm run test
 npx jest src/tests/auth.test.ts --runInBand --forceExit
 ```
 
-Each test suite connects to MongoDB and **drops the database** after it finishes. Use a separate `DATABASE_URL` for testing if needed.
+### Test database isolation
+
+The test runner automatically redirects all database operations to a dedicated **`finalproj_test`** database (the database name from `DATABASE_URL` is replaced with `finalproj_test` when `NODE_ENV=test`). A `safeDropDatabase()` guard refuses to drop any database whose name does not end in `_test`, so running the test suite can never affect your local development data.
 
 Test files live in `src/tests/`:
 
 | File | Coverage |
 |---|---|
 | `auth.test.ts` | Register, login, token refresh, logout |
-| `posts.test.ts` | Post CRUD |
+| `posts.test.ts` | Post CRUD, delete authorization |
 | `comments.test.ts` | Comment CRUD |
 | `likes.test.ts` | Like / unlike |
-| `user.test.ts` | Profile, follow, unfollow |
-| `chats.test.ts` | Chat room creation and retrieval |
-| `messages.test.ts` | Message creation and retrieval |
+| `user.test.ts` | Profile, follow/unfollow, password change, recommended users |
+| `chats.test.ts` | Chat CRUD, deduplication, `GET /chats/unread`, `PUT /chats/:id/read` with auth + participant checks |
+| `messages.test.ts` | Message creation (`readBy` field), participant enforcement, delete authorization |
+| `socket.test.ts` | Socket.io real-time broadcasts (`new_message`, `chat_list_update`) |
+
+## Real-Time Chat Architecture
+
+The chat feature uses **Socket.io v4** layered on top of the existing REST API.
+
+### Personal User Room pattern
+
+Rather than having every client join a socket room for each of their chats (which does not scale), the server uses two room types:
+
+| Room | Name | Purpose |
+|---|---|---|
+| Personal user room | `userId` | Receives `chat_list_update` events for the sidebar — the client joins this room once on mount |
+| Active chat room | `chatId` | Receives `new_message` events for the open message thread — joined when the user opens a chat |
+
+### Event reference
+
+| Event | Direction | Payload | Description |
+|---|---|---|---|
+| `join_user_room` | client → server | `userId` | Client joins its personal room |
+| `join_chat` | client → server | `chatId` | Client joins the active chat room |
+| `new_message` | server → client | `Message` | Broadcast to the active chat room when a message is saved |
+| `chat_list_update` | server → client | `Message` | Broadcast to every participant's personal room — triggers sidebar reordering |
+
+### Sidebar sort
+
+Chats are sorted by `updatedAt` descending. Sending a message touches the parent chat's `updatedAt` timestamp and emits `chat_list_update` so every participant's sidebar reorders instantly without a page refresh.
 
 ## Architecture
 
 ```
 src/
-├── app.ts              # Entry point (starts server)
+├── app.ts              # Entry point — HTTP server + Socket.io setup
 ├── server.ts           # Express app setup, middleware, route mounting
+├── socket.ts           # setIo / getIo singleton (avoids circular deps)
 ├── config/
-│   ├── config.ts       # Zod-validated env config
+│   ├── config.ts       # Zod-validated env config (auto-switches DB to finalproj_test in test)
 │   └── passport.ts     # Google OAuth strategy
 ├── controllers/        # Business logic (one class per resource)
 ├── models/             # Mongoose schemas (User, Post, Comment, Like, Chat, Message, Topic)
@@ -97,7 +142,7 @@ src/
 │   ├── authMiddleware.ts   # JWT verification, injects req.user
 │   └── uploadMiddleware.ts # Multer single-file upload (images only, 5 MB max)
 ├── scripts/
-│   └── seedTopics.ts   # One-off topic seeding script
+│   └── seedAll.ts      # Master seeder (topics, users, posts, comments)
 └── tests/              # Jest + Supertest suites
 ```
 
@@ -180,13 +225,16 @@ Uploaded files are served as static assets from `/uploads/<filename>`.
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/chats` | List chats |
-| GET | `/chats/user/:userId` | Get chats for a user |
-| POST | `/chats` | Create a chat room |
-| DELETE | `/chats/:id` | Delete a chat |
-| GET | `/messages` | List messages |
-| POST | `/messages` | Send a message |
-| DELETE | `/messages/:id` | Delete a message |
+| GET | `/chats` | List own chats (populated participants, `unreadCount` per chat) |
+| GET | `/chats/unread` | Returns `{ unreadChatIds }` — chat IDs with at least one unread message |
+| GET | `/chats/user/:userId` | Get chats for a user (caller must be that user) |
+| GET | `/chats/:id` | Get chat with messages (participant-only) |
+| POST | `/chats` | Create a chat room (deduplicates 1-on-1 chats, returns 200 if exists) |
+| PUT | `/chats/:id/read` | Mark all messages in a chat as read for the caller |
+| DELETE | `/chats/:id` | Delete a chat (participant-only) |
+| GET | `/messages` | List messages (scoped to caller's chats) |
+| POST | `/messages` | Send a message (adds sender to `readBy` automatically) |
+| DELETE | `/messages/:id` | Delete a message (sender-only) |
 
 ### Topics — `/topics`
 

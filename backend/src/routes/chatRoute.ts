@@ -72,6 +72,32 @@ chatRouter.get("/user/:userId", chatController.getByUserId.bind(chatController))
 
 /**
  * @swagger
+ * /chats/unread:
+ *   get:
+ *     summary: Get IDs of chats that have unread messages for the authenticated user
+ *     tags: [Chats]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of chat IDs with at least one unread message
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 unreadChatIds:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ['697a9cd91b8ac38b2cde5352']
+ *       401:
+ *         description: Unauthorized
+ */
+chatRouter.get("/unread", chatController.getUnreadChatIds.bind(chatController));
+
+/**
+ * @swagger
  * /chats/{id}:
  *   get:
  *     summary: Get the chat by id
@@ -157,6 +183,40 @@ chatRouter.post("/", chatController.create.bind(chatController));
  *       404:
  *         description: The chat was not found
  */
+/**
+ * @swagger
+ * /chats/{chatId}/read:
+ *   put:
+ *     summary: Mark all unread messages in a chat as read for the authenticated user
+ *     tags: [Chats]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: chatId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The chat ID
+ *     responses:
+ *       200:
+ *         description: Messages marked as read
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not a participant)
+ *       404:
+ *         description: Chat not found
+ */
+chatRouter.put("/:chatId/read", chatController.markRead.bind(chatController));
 chatRouter.delete("/:id", chatController.delete.bind(chatController));
 
 export default chatRouter;

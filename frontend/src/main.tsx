@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from '@/context/AuthContext';
 import { UserProvider } from '@/context/UserContext';
 import { SideNavProvider } from '@/context/SideNavContext';
+import { ChatNotificationProvider } from '@/context/ChatNotificationContext';
 import { BrowserRouter } from 'react-router-dom';
 
 createRoot(document.getElementById('root')!).render(
@@ -12,9 +13,11 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <UserProvider>
-          <SideNavProvider>
-            <App />
-          </SideNavProvider>
+          <ChatNotificationProvider>
+            <SideNavProvider>
+              <App />
+            </SideNavProvider>
+          </ChatNotificationProvider>
         </UserProvider>
       </AuthProvider>
     </BrowserRouter>
