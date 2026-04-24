@@ -15,6 +15,7 @@ class ChatController extends baseController {
         const limit = parseInt(req.query.limit as string) || 10;
         try {
             const chats = await ChatModel.find({ participants: req.user?._id })
+                .populate('participants', '_id email')
                 .sort({ updatedAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit);
@@ -31,7 +32,9 @@ class ChatController extends baseController {
             return res.status(403).json({ error: 'Forbidden' });
         }
         try {
-            const chats = await ChatModel.find({ participants: userId }).sort({ updatedAt: -1 });
+            const chats = await ChatModel.find({ participants: userId })
+                .populate('participants', '_id email')
+                .sort({ updatedAt: -1 });
             res.json(chats);
         } catch (error) {
             this.handleError(res, error);
@@ -42,11 +45,13 @@ class ChatController extends baseController {
     async getById(req: AuthRequest, res: Response) {
         const id = req.params.id;
         try {
-            const chat = await ChatModel.findById(id).lean();
+            const chat = await ChatModel.findById(id).populate('participants', '_id email').lean();
             if (!chat) {
                 return res.status(404).json({ error: "Chat not found" });
             }
-            if (!chat.participants.some(p => String(p) === String(req.user?._id))) {
+            // After populate, each participant is { _id, email }; fall back to raw ObjectId for unpopulated docs
+            const participantIds = chat.participants.map(p => String((p as any)._id ?? p));
+            if (!participantIds.includes(String(req.user?._id))) {
                 return res.status(403).json({ error: "Forbidden" });
             }
             const messages = await MessageModel.find({ chatId: id });

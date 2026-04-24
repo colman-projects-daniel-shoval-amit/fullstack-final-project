@@ -53,6 +53,6 @@ export interface Message {
 export interface Chat {
   _id: string;
   title: string;
-  participants: string[];
+  participants: (string | { _id: string; email: string })[];
   messages?: Message[];
 }

@@ -31,6 +31,10 @@ export function MessagesPage() {
   const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Mirror chats state into a ref so socket event handlers can read the
+  // current list without capturing a stale closure value.
+  const chatsRef = useRef<Chat[]>([]);
+  useEffect(() => { chatsRef.current = chats; }, [chats]);
 
   // Load user's chats on mount
   useEffect(() => {
@@ -82,10 +86,24 @@ export function MessagesPage() {
     return () => { socket.off('new_message', handleNewMessage); };
   }, [socket, chatId]);
 
-  // chat_list_update: bump the relevant chat to the top of the sidebar
+  // chat_list_update: bump an existing chat to the top, or fetch + insert a
+  // brand-new chat (i.e. the receiving end of a first message).
   useEffect(() => {
     function handleChatListUpdate(msg: Message) {
-      bumpChatToTop(msg.chatId);
+      if (chatsRef.current.some(c => c._id === msg.chatId)) {
+        bumpChatToTop(msg.chatId);
+      } else {
+        chatService.getChatWithMessages(msg.chatId)
+          .then(newChat => {
+            setChats(prev => {
+              if (prev.some(c => c._id === newChat._id)) return prev;
+              return [newChat, ...prev];
+            });
+            // Subscribe to live events for this newly discovered room
+            socket.emit('join_chat', newChat._id);
+          })
+          .catch(() => {});
+      }
     }
     socket.on('chat_list_update', handleChatListUpdate);
     return () => { socket.off('chat_list_update', handleChatListUpdate); };
@@ -135,9 +153,18 @@ export function MessagesPage() {
     setIsCreatingChat(true);
     try {
       const chat = await chatService.createChat(`Chat with ${user.email}`, [user._id]);
+      // Enrich participants immediately so getChatDisplayName works before the
+      // next full reload (create endpoint returns raw ObjectIds, not objects).
+      const enriched: Chat = {
+        ...chat,
+        participants: [
+          { _id: profile!._id, email: profile!.email },
+          { _id: user._id, email: user.email },
+        ],
+      };
       setChats(prev => {
         if (prev.some(c => c._id === chat._id)) return prev;
-        return [chat, ...prev];
+        return [enriched, ...prev];
       });
       navigate('/messages/' + chat._id);
       setShowNewChatDialog(false);
@@ -177,22 +204,25 @@ export function MessagesPage() {
                 No chats yet. Start one with the + button.
               </p>
             ) : (
-              chats.map(chat => (
-                <button
-                  key={chat._id}
-                  onClick={() => navigate('/messages/' + chat._id)}
-                  className={`w-full text-left px-4 py-3 text-sm transition-colors hover:bg-muted/50 ${
-                    chat._id === chatId ? 'bg-muted font-medium' : 'text-muted-foreground'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
-                      {chat.title?.[0]?.toUpperCase() ?? '#'}
+              chats.map(chat => {
+                const displayName = getChatDisplayName(chat, profile?._id);
+                return (
+                  <button
+                    key={chat._id}
+                    onClick={() => navigate('/messages/' + chat._id)}
+                    className={`w-full text-left px-4 py-3 text-sm transition-colors hover:bg-muted/50 ${
+                      chat._id === chatId ? 'bg-muted font-medium' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+                        {displayName[0]?.toUpperCase() ?? '#'}
+                      </div>
+                      <span className="truncate">{displayName}</span>
                     </div>
-                    <span className="truncate">{chat.title}</span>
-                  </div>
-                </button>
-              ))
+                  </button>
+                );
+              })
             )}
           </div>
         </div>
@@ -202,7 +232,7 @@ export function MessagesPage() {
           <div className="flex flex-col flex-1 min-w-0">
             {/* Header */}
             <div className="px-5 py-3 border-b shrink-0">
-              <p className="font-semibold text-sm">{activeChat?.title ?? '…'}</p>
+              <p className="font-semibold text-sm">{activeChat ? getChatDisplayName(activeChat, profile?._id) : '…'}</p>
             </div>
 
             {/* Messages */}
@@ -286,6 +316,16 @@ export function MessagesPage() {
       </Dialog>
     </PageLayout>
   );
+}
+
+function getChatDisplayName(chat: Chat, currentUserId: string | null | undefined): string {
+  const others = chat.participants.filter(p => {
+    const id = typeof p === 'string' ? p : p._id;
+    return id !== currentUserId;
+  });
+  const named = others.filter((p): p is { _id: string; email: string } => typeof p !== 'string');
+  if (named.length === 0) return chat.title;
+  return named.map(p => p.email).join(', ');
 }
 
 function MessageBubble({ message, isMine }: { message: Message; isMine: boolean }) {
