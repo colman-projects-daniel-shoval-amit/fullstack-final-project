@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { aiChatService } from '@/services/aiChatService';
+import ReactMarkdown from "react-markdown";
 
 const AIChatWidget = () => {
   const [open, setOpen] = useState(false);
@@ -8,7 +9,6 @@ const AIChatWidget = () => {
   >([]);
   const [input, setInput] = useState("");
 
-  // ✅ for auto-scroll
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -97,7 +97,6 @@ const AIChatWidget = () => {
             zIndex: 1000,
           }}
         >
-          {/* Header */}
           <div
             style={{
               padding: 10,
@@ -111,7 +110,6 @@ const AIChatWidget = () => {
             Ask Me Anything
           </div>
 
-          {/* Messages */}
           <div
             style={{
               flex: 1,
@@ -136,15 +134,13 @@ const AIChatWidget = () => {
                   maxWidth: "80%",
                 }}
               >
-                {msg.text}
+                <ReactMarkdown>{msg.text}</ReactMarkdown>
               </div>
             ))}
 
-            {/* ✅ auto-scroll anchor */}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div
             style={{
               display: "flex",

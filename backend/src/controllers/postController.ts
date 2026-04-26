@@ -67,33 +67,18 @@ class PostController extends baseController {
                 req.body.summary = result.response.text().trim();
             } catch { }
         }
+
         try {
-          const post = await PostModel.create({
-            ...req.body,
-            authorId: userId
-          });
-      
-          const chunks = this.splitArticle(post.text);
-
-      
-
-          const chunkDocs = await Promise.all(
-            chunks.map(async (chunk) => {
-              const embedding = await getEmbedding(chunk);
-              return {
-                postId: post._id,
-                content: chunk,
-                embedding
-              };
-            })
-          );
-
-          await PostChunkModel.insertMany(chunkDocs);
-      
-          res.status(201).json(post);
-      
+            const post = await PostModel.create({ ...req.body, authorId: userId });
+    
+            res.status(201).json(post); 
+    
+            this.generateAndStoreChunks(post._id, post.text).catch(err =>
+                console.error("Chunk indexing failed:", err)
+            );
+    
         } catch (error) {
-          this.handleError(res, error);
+            this.handleError(res, error);
         }
       }
     
@@ -130,21 +115,8 @@ class PostController extends baseController {
             await post.save();
             if (req.body.text) {
                 await PostChunkModel.deleteMany({ postId: post._id });
-        
-                const chunks = this.splitArticle(post.text);
-        
-                const chunkDocs = await Promise.all(
-                chunks.map(async (chunk) => {
-                    const embedding = await getEmbedding(chunk);
-                    return {
-                    postId: post._id,
-                    content: chunk,
-                    embedding
-                    };
-                })
-                );
-        
-                await PostChunkModel.insertMany(chunkDocs);
+                
+                this.generateAndStoreChunks(post._id, post.text);
             }
             res.json(post);
             return;
@@ -152,6 +124,26 @@ class PostController extends baseController {
             this.handleError(res, error);
             return;
         }
+    }
+
+    async generateAndStoreChunks(postId: unknown, text: string) {
+        const chunks = this.splitArticle(text);
+        const CONCURRENCY = 3;
+        const chunkDocs = [];
+    
+        for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+            const batch = chunks.slice(i, i + CONCURRENCY);
+            const results = await Promise.all(
+                batch.map(async (chunk) => ({
+                    postId,
+                    content: chunk,
+                    embedding: await getEmbedding(chunk)
+                }))
+            );
+            chunkDocs.push(...results);
+        }
+    
+        await PostChunkModel.insertMany(chunkDocs);
     }
 
     async delete(req: Request, res: Response) {
