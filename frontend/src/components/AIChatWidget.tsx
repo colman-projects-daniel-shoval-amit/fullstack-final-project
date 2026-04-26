@@ -25,7 +25,6 @@ const AIChatWidget = () => {
     const question = input;
     setInput("");
   
-    // add loading message
     setMessages((prev) => [
       ...prev,
       { role: "bot", text: "Thinking..." },
@@ -57,7 +56,6 @@ const AIChatWidget = () => {
 
   return (
     <>
-      {/* Floating Button */}
       <div
         onClick={() => setOpen(!open)}
         style={{
@@ -80,7 +78,6 @@ const AIChatWidget = () => {
         💬
       </div>
 
-      {/* Chat Window */}
       {open && (
         <div
           style={{
