@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { ScrollToTop } from '@/components/ScrollToTop';
 import { AuthPage } from '@/pages/AuthPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { GoogleCallbackPage } from '@/pages/GoogleCallbackPage';
@@ -8,6 +9,7 @@ import { PostEditorPage } from '@/pages/PostEditorPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { MyPostsPage } from '@/pages/MyPostsPage';
 import { FollowingPage } from '@/pages/FollowingPage';
+import { MessagesPage } from '@/pages/MessagesPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useUser } from '@/context/UserContext';
@@ -22,8 +24,9 @@ function OnboardingGuard() {
 
 function App() {
   return (
-    <div>
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/callback" element={<GoogleCallbackPage />} />
       <Route path="/not-found" element={<NotFoundPage />} />
@@ -37,12 +40,13 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my-posts" element={<MyPostsPage />} />
         <Route path="/following" element={<FollowingPage />} />
+        <Route path="/messages/:chatId?" element={<MessagesPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />
     </Routes>
       <AIChatWidget />
-    </div>
+    </>
   );
 }
 

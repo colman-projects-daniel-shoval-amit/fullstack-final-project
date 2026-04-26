@@ -13,6 +13,7 @@ const envSchema = z.object({
     GOOGLE_CLIENT_SECRET: z.string().default(''),
     GOOGLE_CALLBACK_URL: z.string().default('http://localhost:3000/auth/google/callback'),
     FRONTEND_URL: z.string().default('http://localhost:5173'),
+    GEMINI_API_KEY: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -23,4 +24,13 @@ if (!parsed.success) {
     process.exit(1);
 }
 
-export const config = parsed.data;
+const data = parsed.data;
+
+if (process.env.NODE_ENV === 'test') {
+    data.DATABASE_URL = data.DATABASE_URL.replace(
+        /(mongodb(?:\+srv)?:\/\/[^/]*\/)([^?#]*)(.*)/,
+        (_match, prefix, _dbName, suffix) => `${prefix}finalproj_test${suffix}`
+    );
+}
+
+export const config = data;

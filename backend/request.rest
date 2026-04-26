@@ -1,108 +1,334 @@
-### User API Testing
+### InkWall API — VS Code REST Client
+### Usage: set @token after logging in (copy from the login response)
 
-### Posts
+@baseUrl = http://localhost:5000
+@token = paste_jwt_here
+@refreshToken = paste_refresh_token_here
 
-### Get all posts
-GET http://localhost:3000/posts
+# ─────────────────────────────────────────────
+# AUTH
+# ─────────────────────────────────────────────
 
-### Get post by id
-GET http://localhost:3000/posts/12345
+### Register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "password123"
+}
+
+### Login  ← copy token + refreshToken from response into variables above
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "jhhojh10@gmail.com",
+  "password": "qwe123"
+}
+
+### Refresh access token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Google OAuth — open this URL in a browser, not via REST Client
+# GET {{baseUrl}}/auth/google
+
+# ─────────────────────────────────────────────
+# USERS
+# ─────────────────────────────────────────────
+
+### Get own profile (with interests, following, followers)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### Update own interests (array of topic ObjectIds)
+PATCH {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "interests": ["64e2f1a2b3c4d5e6f7a8b9c0", "64e2f1a2b3c4d5e6f7a8b9c1"]
+}
+
+### Change password (email/password accounts only)
+PATCH {{baseUrl}}/users/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "qwe123",
+  "newPassword": "newpass456"
+}
+
+### Upload avatar — use a REST client that supports multipart, or Swagger at /api-docs
+# POST {{baseUrl}}/users/me/avatar  (multipart/form-data, field: image)
+
+### Get recommended users (up to 5, based on shared interests)
+GET {{baseUrl}}/users/recommended
+Authorization: Bearer {{token}}
+
+### Follow a user
+POST {{baseUrl}}/users/64e2f1a2b3c4d5e6f7a8b9c0/follow
+Authorization: Bearer {{token}}
+
+### Unfollow a user
+DELETE {{baseUrl}}/users/64e2f1a2b3c4d5e6f7a8b9c0/follow
+Authorization: Bearer {{token}}
+
+### List all users (paginated)
+GET {{baseUrl}}/users?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### Get user by ID
+GET {{baseUrl}}/users/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
+
+### Delete user by ID
+DELETE {{baseUrl}}/users/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
+
+# ─────────────────────────────────────────────
+# POSTS
+# ─────────────────────────────────────────────
+
+### List posts (paginated; filter by topics or authorIds)
+GET {{baseUrl}}/posts?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### List posts filtered by topic and author
+GET {{baseUrl}}/posts?topics[]=64e2f1a2b3c4d5e6f7a8b9c0&authorIds[]=64e2f1a2b3c4d5e6f7a8b9c1
+Authorization: Bearer {{token}}
+
+### Get post by ID
+GET {{baseUrl}}/posts/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
 
 ### Create post
-POST http://localhost:3000/posts
+POST {{baseUrl}}/posts
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "title": "My First Post",
-    "image": "shoval.king",
-    "text": "This is the content of my first post",
-    "authorId": "Bob Sponge"
+  "title": "My First Post",
+  "text": "This is the body of my post written in **Markdown**.",
+  "image": "",
+  "topics": ["64e2f1a2b3c4d5e6f7a8b9c0"]
 }
 
-### Update post
-PUT http://localhost:3000/posts/697a65f59de97b4c60af618d
+### Update post (owner only)
+PUT {{baseUrl}}/posts/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "text": "My updated post"
+  "title": "Updated Title",
+  "text": "Updated body content."
 }
 
+### Delete post (owner only)
+DELETE {{baseUrl}}/posts/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
 
-### Comments
+# ─────────────────────────────────────────────
+# FILE UPLOAD
+# ─────────────────────────────────────────────
 
-### Get all comments
-GET http://localhost:3000/comment
+### Upload image — returns { url: "/uploads/<filename>" }
+### Use Swagger UI at http://localhost:5000/api-docs or a multipart-capable client
+# POST {{baseUrl}}/upload  (multipart/form-data, field: image)
 
-### Get comment by id
-GET http://localhost:3000/comment/697a73c03ef605dc07f5bee5
+# ─────────────────────────────────────────────
+# COMMENTS
+# ─────────────────────────────────────────────
+
+### List all comments (paginated)
+GET {{baseUrl}}/comments?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### Get comment by ID
+GET {{baseUrl}}/comments/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
 
 ### Create comment
-POST http://localhost:3000/comment
+POST {{baseUrl}}/comments
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "postId": "697a65f59de97b4c60af618d",
-    "content": "This is a comment",
-    "authorId": "Jane Doe"
+  "postId": "64e2f1a2b3c4d5e6f7a8b9c0",
+  "content": "Great article, thanks for sharing!"
 }
 
-### Update comment
-PUT http://localhost:3000/comment/697a73c03ef605dc07f5bee5
+### Update comment (owner only)
+PUT {{baseUrl}}/comments/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "content": "Thiasdfs is an updated asdfsadfs afdsa fcomment"
+  "content": "Edited: even better article!"
 }
 
-### Delete comment
-DELETE http://localhost:3000/comment/697a73c03ef605dc07f5bee5
+### Delete comment (owner only)
+DELETE {{baseUrl}}/comments/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
 
-### Likes
+# ─────────────────────────────────────────────
+# LIKES
+# ─────────────────────────────────────────────
 
-### Get all likes
-GET http://localhost:3000/likes
+### List all likes
+GET {{baseUrl}}/likes?page=1&limit=20
+Authorization: Bearer {{token}}
 
-### Get like by id
-GET http://localhost:3000/likes/697a73c03ef605dc07f5bee5
-
-### Create like
-POST http://localhost:3000/likes
+### Like a post (postId required; omit commentId for post likes)
+POST {{baseUrl}}/likes
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "postId": "697a65f59de97b4c60af618d"
+  "postId": "64e2f1a2b3c4d5e6f7a8b9c0"
 }
 
-### Delete like
-DELETE http://localhost:3000/likes/697a73c03ef605dc07f5bee5
+### Remove a like
+DELETE {{baseUrl}}/likes/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
 
-### Chats
+# ─────────────────────────────────────────────
+# TOPICS
+# ─────────────────────────────────────────────
 
-### Get all chats
-GET http://localhost:3000/chats
+### List all topics
+GET {{baseUrl}}/topics
+Authorization: Bearer {{token}}
 
-### Get chats by user id
-GET http://localhost:3000/chats/user/697a65f59de97b4c60af618d
+### Get topic by ID
+GET {{baseUrl}}/topics/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
 
-### Create chat
-POST http://localhost:3000/chats
+# ─────────────────────────────────────────────
+# CHATS
+# Real-time: clients join "join_user_room" (userId) on mount
+# and "join_chat" (chatId) when a chat is opened.
+# POST /chats is find-or-create: 200 = existing, 201 = new
+# ─────────────────────────────────────────────
+
+### List all chats (admin/debug)
+GET {{baseUrl}}/chats
+Authorization: Bearer {{token}}
+
+### Get all chats for a user — sorted by most recent activity
+GET {{baseUrl}}/chats/user/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
+
+### Get chat by ID (includes embedded messages array)
+GET {{baseUrl}}/chats/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
+
+### Create or retrieve 1-on-1 chat (find-or-create)
+### Returns 201 for a new chat, 200 if one already exists between the two users
+### The authenticated user is added to participants automatically
+POST {{baseUrl}}/chats
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "title": "Group Homework",
-    "participants": ["697a65f59de97b4c60af618d"]
+  "title": "Chat with alice@example.com",
+  "participants": ["64e2f1a2b3c4d5e6f7a8b9c1"]
 }
 
-### Messages
-
-### Get all messages for a chat
-GET http://localhost:3000/messages?chatId=697a65f59de97b4c60af618d
-
-### Create message
-POST http://localhost:3000/messages
+### Create a group chat
+POST {{baseUrl}}/chats
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "chatId": "697a65f59de97b4c60af618d",
-    "content": "Hello everyone!"
+  "title": "Study Group",
+  "participants": ["64e2f1a2b3c4d5e6f7a8b9c1", "64e2f1a2b3c4d5e6f7a8b9c2"]
+}
+
+### Delete chat (participants only)
+DELETE {{baseUrl}}/chats/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
+
+# ─────────────────────────────────────────────
+# MESSAGES
+# Sending a message also:
+#   • touches chat.updatedAt (sidebar sort)
+#   • emits "new_message" → chat room
+#   • emits "chat_list_update" → each participant's personal room
+# ─────────────────────────────────────────────
+
+### List messages (optionally filter by chatId)
+GET {{baseUrl}}/messages?chatId=64e2f1a2b3c4d5e6f7a8b9c0&page=1&limit=50
+Authorization: Bearer {{token}}
+
+### Get message by ID
+GET {{baseUrl}}/messages/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
+
+### Send a message (participants only — triggers Socket.io broadcasts)
+POST {{baseUrl}}/messages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "chatId": "64e2f1a2b3c4d5e6f7a8b9c0",
+  "content": "Hello everyone!"
+}
+
+### Delete message (sender only)
+DELETE {{baseUrl}}/messages/64e2f1a2b3c4d5e6f7a8b9c0
+Authorization: Bearer {{token}}
+
+# ─────────────────────────────────────────────
+# AI WRITING ASSISTANCE
+# ─────────────────────────────────────────────
+
+### AI assist — improve, continue, or outline a post draft
+POST {{baseUrl}}/ai/assist
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "The Future of Web Development",
+  "content": "Web development has changed a lot over the past decade...",
+  "instruction": "improve"
+}
+
+### AI summarize — generate a 2-3 sentence summary
+POST {{baseUrl}}/ai/summarize
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "The Future of Web Development",
+  "content": "Web development has changed a lot over the past decade. React, Vue, and other frameworks..."
+}
+
+### AI suggest-topics — returns array of matching topic ObjectIds
+POST {{baseUrl}}/ai/suggest-topics
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Getting started with TypeScript",
+  "content": "TypeScript adds static types to JavaScript, making large codebases easier to maintain...",
+  "topics": [
+    { "_id": "64e2f1a2b3c4d5e6f7a8b9c0", "name": "Technology" },
+    { "_id": "64e2f1a2b3c4d5e6f7a8b9c1", "name": "Programming" }
+  ]
 }

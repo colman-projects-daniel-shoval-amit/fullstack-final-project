@@ -4,11 +4,14 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
-import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import { Table as TableExtension } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import { Markdown } from 'tiptap-markdown';
 import {
-  Bold, Italic, Link as LinkIcon, ImagePlus, X, Loader2, Table, Code, Plus,
+  Bold, Italic, Link as LinkIcon, ImagePlus, X, Loader2, Table, Code, Plus, Sparkles, Minus, Strikethrough, Quote,
 } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -19,7 +22,9 @@ import { useAuth } from '@/context/AuthContext';
 import { postService } from '@/services/postService';
 import { topicService } from '@/services/topicService';
 import type { Topic } from '@/services/topicService';
+import { aiService } from '@/services/aiService';
 import { resolveImageUrl } from '@/lib/utils';
+import isURL from 'validator/lib/isURL';
 
 export function PostEditorPage() {
   const { id } = useParams<{ id?: string }>();
@@ -43,9 +48,16 @@ export function PostEditorPage() {
   const [topicsDialogOpen, setTopicsDialogOpen] = useState(false);
   const [allTopics, setAllTopics] = useState<Topic[]>([]);
   const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [isSuggestingTopics, setIsSuggestingTopics] = useState(false);
   const [plusTop, setPlusTop] = useState<number | null>(null);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number } | null>(null);
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
+  const [linkInput, setLinkInput] = useState('');
+  const [tablePickerOpen, setTablePickerOpen] = useState(false);
+  const [tableHover, setTableHover] = useState<{ rows: number; cols: number } | null>(null);
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -58,9 +70,12 @@ export function PostEditorPage() {
       StarterKit,
       Placeholder.configure({ placeholder: 'Tell your story…' }),
       Typography,
-      Link.configure({ openOnClick: false }),
       Image.configure({ inline: false }),
-      Markdown,
+      TableExtension.configure({ resizable: false }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      Markdown.configure({ linkify: true }),
     ],
     editorProps: {
       attributes: {
@@ -130,7 +145,7 @@ export function PostEditorPage() {
       setText(post.text);
       if (editor) editor.commands.setContent(post.text);
       setCoverImage(post.image ?? '');
-      setSelectedTopicIds(post.topics ?? []);
+      setSelectedTopicIds((post.topics ?? []).map(t => (typeof t === 'object' ? t._id : t)));
       setIsLoadingPost(false);
     }).catch(() => navigate('/'));
   }, [id, isEditMode, userId, navigate, editor]);
@@ -176,6 +191,40 @@ export function PostEditorPage() {
     setCoverImage('');
     if (coverFileRef.current) coverFileRef.current.value = '';
   }
+
+  async function handleAiAssist(instruction: 'improve' | 'continue' | 'outline') {
+    const content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      const result = await aiService.assist(title, content, instruction);
+      if (editor) {
+        if (instruction === 'continue') {
+          editor.chain().focus().insertContentAt(editor.state.doc.content.size, '\n\n' + result).run();
+        } else {
+          editor.chain().setContent(result, { emitUpdate: true }).focus().run();
+        }
+        setText((editor.storage as any).markdown.getMarkdown());
+      } else {
+        setText(instruction === 'continue' ? content + '\n\n' + result : result);
+      }
+    } catch {
+      setAiError('AI request failed. Please try again.');
+    } finally {
+      setIsAiLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!topicsDialogOpen || allTopics.length === 0) return;
+    const content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
+    if (!content.trim()) return;
+    setIsSuggestingTopics(true);
+    aiService.suggestTopics(title, content, allTopics)
+      .then(ids => setSelectedTopicIds(ids))
+      .catch(() => {})
+      .finally(() => setIsSuggestingTopics(false));
+  }, [topicsDialogOpen]);
 
   function handleSubmit() {
     const content = editor ? (editor.storage as any).markdown.getMarkdown() : text;
@@ -251,7 +300,15 @@ export function PostEditorPage() {
           type="button"
           role="switch"
           aria-checked={rawMode}
-          onClick={() => setRawMode(v => !v)}
+          onClick={() => setRawMode(v => {
+            if (!v && editor) {
+              setText((editor.storage as any).markdown.getMarkdown());
+            }
+            if (v && editor) {
+              editor.commands.setContent(text);
+            }
+            return !v;
+          })}
           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${rawMode ? 'bg-primary' : 'bg-muted-foreground/30'}`}
         >
           <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${rawMode ? 'translate-x-4' : 'translate-x-1'}`} />
@@ -309,6 +366,22 @@ export function PostEditorPage() {
           className="w-full text-4xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/40 mb-8 focus:ring-0 resize-none overflow-hidden leading-tight"
         />
 
+        <div className="flex items-center gap-2 mb-4">
+          {(['improve', 'continue', 'outline'] as const).map(action => (
+            <button
+              key={action}
+              type="button"
+              onClick={() => handleAiAssist(action)}
+              disabled={isAiLoading || !title.trim()}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40"
+            >
+              {isAiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {action.charAt(0).toUpperCase() + action.slice(1)}
+            </button>
+          ))}
+        </div>
+        {aiError && <p className="text-xs text-destructive mb-3">{aiError}</p>}
+
         <div ref={wrapperRef} className="relative pl-10">
           {selectionToolbar && editor && (
             <div
@@ -316,12 +389,48 @@ export function PostEditorPage() {
               style={{ top: selectionToolbar.top, left: selectionToolbar.left }}
               onMouseDown={e => e.preventDefault()}
             >
-              <SelectionButton icon={<span className="flex items-end leading-none gap-[1px]"><span className="text-[13px] font-bold">T</span><span className="text-[9px] font-bold mb-[1px]">T</span></span>} label="Heading" active={editor.isActive('heading', { level: 2 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); setSelectionToolbar(null); }} />
-              <div className="w-px h-4 bg-white/20 mx-0.5" />
-              <SelectionButton icon={<Bold className="w-3.5 h-3.5" />} label="Bold" active={editor.isActive('bold')} onClick={() => { editor.chain().focus().toggleBold().run(); setSelectionToolbar(null); }} />
-              <SelectionButton icon={<Italic className="w-3.5 h-3.5" />} label="Italic" active={editor.isActive('italic')} onClick={() => { editor.chain().focus().toggleItalic().run(); setSelectionToolbar(null); }} />
-              <SelectionButton icon={<Code className="w-3.5 h-3.5" />} label="Code" active={editor.isActive('code')} onClick={() => { editor.chain().focus().toggleCode().run(); setSelectionToolbar(null); }} />
-              <SelectionButton icon={<LinkIcon className="w-3.5 h-3.5" />} label="Link" active={false} onClick={() => { const url = window.prompt('URL'); if (url) editor.chain().focus().setLink({ href: url }).run(); setSelectionToolbar(null); }} />
+              {linkPopoverOpen ? (
+                <form
+                  className="flex items-center gap-1"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    const raw = linkInput.trim();
+                    if (raw) {
+                      const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+                      if (!isURL(href, { protocols: ['http', 'https'], require_protocol: true })) return;
+                      editor.chain().focus().setLink({ href }).run();
+                    }
+                    setLinkPopoverOpen(false);
+                    setLinkInput('');
+                    setSelectionToolbar(null);
+                  }}
+                >
+                  <input
+                    autoFocus
+                    value={linkInput}
+                    onChange={e => setLinkInput(e.target.value)}
+                    placeholder="https://…"
+                    className="bg-background text-foreground text-xs rounded px-2 py-0.5 outline-none w-44 border border-border"
+                    onKeyDown={e => {
+                      if (e.key === 'Escape') { setLinkPopoverOpen(false); setLinkInput(''); }
+                    }}
+                  />
+                  <button type="submit" className="text-xs px-2 py-0.5 rounded bg-primary text-primary-foreground">Add</button>
+                </form>
+              ) : (
+                <>
+                  <SelectionButton icon={<span className="text-[11px] font-bold leading-none">H1</span>} label="Heading 1" active={editor.isActive('heading', { level: 1 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 1 }).run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<span className="text-[11px] font-bold leading-none">H2</span>} label="Heading 2" active={editor.isActive('heading', { level: 2 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 2 }).run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<span className="text-[11px] font-bold leading-none">H3</span>} label="Heading 3" active={editor.isActive('heading', { level: 3 })} onClick={() => { editor.chain().focus().toggleHeading({ level: 3 }).run(); setSelectionToolbar(null); }} />
+                  <div className="w-px h-4 bg-white/20 mx-0.5" />
+                  <SelectionButton icon={<Bold className="w-3.5 h-3.5" />} label="Bold" active={editor.isActive('bold')} onClick={() => { editor.chain().focus().toggleBold().run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<Italic className="w-3.5 h-3.5" />} label="Italic" active={editor.isActive('italic')} onClick={() => { editor.chain().focus().toggleItalic().run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<Code className="w-3.5 h-3.5" />} label="Code" active={editor.isActive('code')} onClick={() => { editor.chain().focus().toggleCode().run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<LinkIcon className="w-3.5 h-3.5" />} label="Link" active={editor.isActive('link')} onClick={() => { setLinkInput(''); setLinkPopoverOpen(true); }} />
+                  <SelectionButton icon={<Strikethrough className="w-3.5 h-3.5" />} label="Strikethrough" active={editor.isActive('strike')} onClick={() => { editor.chain().focus().toggleStrike().run(); setSelectionToolbar(null); }} />
+                  <SelectionButton icon={<Quote className="w-3.5 h-3.5" />} label="Blockquote" active={editor.isActive('blockquote')} onClick={() => { editor.chain().focus().toggleBlockquote().run(); setSelectionToolbar(null); }} />
+                </>
+              )}
             </div>
           )}
 
@@ -342,15 +451,52 @@ export function PostEditorPage() {
                   onClick={() => inlineImageRef.current?.click()}
                   disabled={isInsertingImage}
                 />
-                <PlusMenuItem
-                  icon={<Table className="w-4 h-4" />}
-                  label="Table"
-                  onClick={() => insertBlock('| Column 1 | Column 2 |\n|----------|----------|\n| Cell | Cell |\n')}
-                />
+                <div className="relative">
+                  <PlusMenuItem
+                    icon={<Table className="w-4 h-4" />}
+                    label="Table"
+                    onClick={() => setTablePickerOpen(v => !v)}
+                  />
+                  {tablePickerOpen && (
+                    <div
+                      className="absolute left-0 top-full mt-1 bg-background border border-border rounded-lg shadow-lg p-2 z-30"
+                      onMouseLeave={() => setTableHover(null)}
+                    >
+                      <p className="text-xs text-muted-foreground mb-1.5 text-center">
+                        {tableHover ? `${tableHover.rows} × ${tableHover.cols}` : 'Pick size'}
+                      </p>
+                      <div className="grid gap-0.5" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+                        {Array.from({ length: 36 }, (_, i) => {
+                          const r = Math.floor(i / 6) + 1;
+                          const c = (i % 6) + 1;
+                          const highlighted = tableHover && r <= tableHover.rows && c <= tableHover.cols;
+                          return (
+                            <div
+                              key={i}
+                              className={`w-5 h-5 border rounded-sm cursor-pointer transition-colors ${highlighted ? 'bg-primary border-primary' : 'border-border hover:border-primary'}`}
+                              onMouseEnter={() => setTableHover({ rows: r, cols: c })}
+                              onClick={() => {
+                                editor?.chain().focus().insertTable({ rows: r, cols: c, withHeaderRow: true }).run();
+                                setTablePickerOpen(false);
+                                setTableHover(null);
+                                setPlusMenuOpen(false);
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <PlusMenuItem
                   icon={<Code className="w-4 h-4" />}
                   label="Code block"
-                  onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+                  onClick={() => { setPlusMenuOpen(false); editor?.chain().focus().toggleCodeBlock().run(); }}
+                />
+                <PlusMenuItem
+                  icon={<Minus className="w-4 h-4" />}
+                  label="Divider"
+                  onClick={() => { setPlusMenuOpen(false); editor?.chain().focus().setHorizontalRule().run(); }}
                 />
               </div>
               )}
@@ -360,10 +506,7 @@ export function PostEditorPage() {
           {rawMode ? (
             <textarea
               value={text}
-              onChange={e => {
-                setText(e.target.value);
-                editor?.commands.setContent(e.target.value);
-              }}
+              onChange={e => setText(e.target.value)}
               placeholder="Write your post in markdown…"
               className="w-full min-h-[60vh] bg-transparent border-none outline-none text-base leading-7 resize-none focus:ring-0 placeholder:text-muted-foreground/40"
               style={{ overflow: 'auto' }}
@@ -388,10 +531,17 @@ export function PostEditorPage() {
             <DialogTitle>Choose topics</DialogTitle>
             <DialogDescription>Select the topics that best describe your post.</DialogDescription>
           </DialogHeader>
+          {isSuggestingTopics && (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              AI is suggesting topics…
+            </span>
+          )}
           <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto py-1">
-            {allTopics.map(topic => {
-              const active = selectedTopicIds.includes(topic._id);
-              return (
+            {(() => {
+              const selectedTopics = allTopics.filter(t => selectedTopicIds.includes(t._id));
+              const unselectedTopics = allTopics.filter(t => !selectedTopicIds.includes(t._id));
+              const renderPill = (topic: Topic, active: boolean) => (
                 <button
                   key={topic._id}
                   type="button"
@@ -405,7 +555,16 @@ export function PostEditorPage() {
                   {topic.name}
                 </button>
               );
-            })}
+              return (
+                <>
+                  {selectedTopics.map(t => renderPill(t, true))}
+                  {selectedTopics.length > 0 && unselectedTopics.length > 0 && (
+                    <div className="w-full h-px bg-border my-1" />
+                  )}
+                  {unselectedTopics.map(t => renderPill(t, false))}
+                </>
+              );
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTopicsDialogOpen(false)}>Cancel</Button>

@@ -12,6 +12,7 @@ import likeRouter from "./routes/likeRoute";
 import chatRouter from "./routes/chatRoute";
 import messageRouter from "./routes/messageRoute";
 import topicRouter from "./routes/topicRoute";
+import aiRouter from "./routes/aiRoute";
 import cors from "cors";
 import { authenticate } from "./middlewares/authMiddleware";
 import { uploadSingle } from "./middlewares/uploadMiddleware";
@@ -26,9 +27,14 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customSiteTitle: 'Shoval & Daniel Posts & Comments API Documentation'
 }));
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cors());
+
+app.use((req, _res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    next();
+});
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
@@ -51,6 +57,7 @@ app.use('/likes', likeRouter);
 app.use('/chats', chatRouter);
 app.use('/messages', messageRouter);
 app.use('/topics', topicRouter);
+app.use('/ai', aiRouter);
 
 const db = mongoose.connection;
 db.on("error", (error) => console.error(error));

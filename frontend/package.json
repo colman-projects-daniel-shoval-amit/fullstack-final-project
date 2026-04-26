@@ -18,9 +18,14 @@
     "@tiptap/extension-image": "^3.20.4",
     "@tiptap/extension-link": "^3.20.4",
     "@tiptap/extension-placeholder": "^3.20.4",
+    "@tiptap/extension-table": "^3.22.4",
+    "@tiptap/extension-table-cell": "^3.22.4",
+    "@tiptap/extension-table-header": "^3.22.4",
+    "@tiptap/extension-table-row": "^3.22.4",
     "@tiptap/extension-typography": "^3.20.4",
     "@tiptap/react": "^3.20.4",
     "@tiptap/starter-kit": "^3.20.4",
+    "@types/validator": "^13.15.10",
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -30,8 +35,10 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.28.0",
     "remark-gfm": "^4.0.1",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^2.5.5",
-    "tiptap-markdown": "^0.9.0"
+    "tiptap-markdown": "^0.9.0",
+    "validator": "^13.15.35"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

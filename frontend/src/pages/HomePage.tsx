@@ -2,16 +2,16 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, MessageCircle } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
+import { RecommendedUserRow } from '@/components/RecommendedUserRow';
 import { PostCard } from '@/components/PostCard';
 import { PostCardSkeleton } from '@/components/PostCardSkeleton';
 import { AuthorBadge } from '@/components/AuthorBadge';
 import { postService } from '@/services/postService';
 import { topicService } from '@/services/topicService';
 import { userService } from '@/services/userService';
-import { useUser } from '@/context/UserContext';
 import type { Topic } from '@/services/topicService';
 import type { RecommendedUser } from '@/types';
-import { getDateFromId, resolveImageUrl } from '@/lib/utils';
+import { getDateFromId, resolveImageUrl, stripMarkdown } from '@/lib/utils';
 import type { Post } from '@/types';
 
 const LIMIT = 10;
@@ -196,44 +196,9 @@ export function HomePage() {
   );
 }
 
-function RecommendedUserRow({ user }: { user: RecommendedUser }) {
-  const { isFollowing, follow, unfollow } = useUser();
-  const [isPending, setIsPending] = useState(false);
-  const following = isFollowing(user._id);
-
-  async function handleClick() {
-    if (isPending) return;
-    setIsPending(true);
-    try {
-      following ? await unfollow(user._id) : await follow(user._id);
-    } finally {
-      setIsPending(false);
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-full bg-muted text-foreground flex items-center justify-center text-sm font-semibold shrink-0 select-none">
-        {user.email[0].toUpperCase()}
-      </div>
-      <span className="flex-1 text-sm text-foreground truncate">{user.email}</span>
-      <button
-        onClick={handleClick}
-        disabled={isPending}
-        className={`text-xs px-2.5 py-0.5 rounded-full border transition-colors shrink-0 disabled:opacity-50 ${
-          following
-            ? 'border-muted-foreground/40 text-muted-foreground hover:border-destructive hover:text-destructive'
-            : 'border-primary text-primary hover:bg-primary hover:text-primary-foreground'
-        }`}
-      >
-        {following ? 'Following' : 'Follow'}
-      </button>
-    </div>
-  );
-}
-
 function FeaturedPostCard({ post, authorEmail, authorId }: { post: Post; authorEmail: string; authorId: string }) {
-  const excerpt = post.text.length > 200 ? post.text.slice(0, 200) + '…' : post.text;
+  const excerptSource = post.summary ?? stripMarkdown(post.text);
+  const excerpt = excerptSource.length > 200 ? excerptSource.slice(0, 200) + '…' : excerptSource;
   const date = getDateFromId(post._id).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

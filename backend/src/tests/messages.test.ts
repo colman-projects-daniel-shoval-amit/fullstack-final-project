@@ -5,8 +5,10 @@ import { Express } from "express";
 import userModel from "../models/userModel";
 import chatModel from "../models/chatModel";
 import messageModel from "../models/messageModel";
-import { describe, expect, test, beforeAll, afterAll } from '@jest/globals';
-import { getLogedInUser, UserData, userData1, userData2 } from "./utils";
+import { describe, expect, test, beforeAll, afterAll, jest } from '@jest/globals';
+import { getLogedInUser, UserData, userData1, userData2, safeDropDatabase } from "./utils";
+
+jest.setTimeout(30000);
 
 let app: Express;
 let loginUser1: UserData;
@@ -23,7 +25,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    await mongoose.connection.dropDatabase();
+    await safeDropDatabase(mongoose.connection);
     await mongoose.connection.close();
 });
 
@@ -55,6 +57,10 @@ describe("Message Tests", () => {
         expect(response.body.senderId).toBe(loginUser1._id);
         expect(response.body.chatId).toBe(chatId);
         expect(response.body.content).toBe("Hello Chat!");
+        // Sender is automatically added to readBy so they never see their own message as unread
+        expect(Array.isArray(response.body.readBy)).toBe(true);
+        expect(response.body.readBy).toContain(loginUser1._id);
+        expect(response.body.readBy).not.toContain(loginUser2._id);
         messageId = response.body._id;
     });
 
