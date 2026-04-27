@@ -63,7 +63,7 @@ async ask(req: Request, res: Response): Promise<void> {
           }
         },
 
-        { $match: { score: { $gt: 0.65 } } },
+        { $match: { score: { $gt: 0.55 } } },
         { $sort: { score: -1 } },
 
         // group by post, take the highest scoring chunk as the representative score for that post
