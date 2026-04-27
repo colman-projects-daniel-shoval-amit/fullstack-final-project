@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "seed:all": "tsx src/scripts/seedAll.ts",
+    "build": "tsc",
     "test": "jest --runInBand --detectOpenHandles --forceExit"
   },
   "keywords": [],
