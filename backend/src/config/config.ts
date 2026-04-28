@@ -11,8 +11,8 @@ const envSchema = z.object({
     REFRESH_TOKEN_EXPIRES_IN: z.coerce.number().default(36000),
     GOOGLE_CLIENT_ID: z.string().default(''),
     GOOGLE_CLIENT_SECRET: z.string().default(''),
-    GOOGLE_CALLBACK_URL: z.string().default('http://10.10.246.69:4000/auth/google/callback'),
-    FRONTEND_URL: z.string().default('http://10.10.246.69:443'),
+    GOOGLE_CALLBACK_URL: z.string().default('http://localhost:3000/auth/google/callback'),
+    FRONTEND_URL: z.string().default('http://localhost:443'),
     GEMINI_API_KEY: z.string().default(''),
 });
 
