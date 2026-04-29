@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { AuthPage } from '@/pages/AuthPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -23,6 +23,7 @@ function OnboardingGuard() {
 }
 
 function App() {
+  const location = useLocation();
   return (
     <>
       <ScrollToTop />
@@ -45,7 +46,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />
     </Routes>
-      <AIChatWidget />
+      {location.pathname === '/' && <AIChatWidget />}
     </>
   );
 }
