@@ -25,7 +25,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
     await safeDropDatabase(mongoose.connection);
-    await mongoose.connection.close();
 });
 
 describe("Chat Tests", () => {

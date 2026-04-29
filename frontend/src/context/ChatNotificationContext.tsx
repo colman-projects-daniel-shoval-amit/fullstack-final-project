@@ -45,8 +45,13 @@ export function ChatNotificationProvider({ children }: { children: ReactNode }) 
 
   // Listen for incoming messages and increment the global badge
   useEffect(() => {
+    const currentUserId = profile?._id;
     function handler(msg: Message) {
       console.log('Global Context received message:', msg);
+
+      // Ignore messages sent by the current user
+      if (msg.senderId === currentUserId) return;
+
       // Do not count a chat the user is currently viewing
       const activeChatId = window.location.pathname.startsWith('/messages/')
         ? window.location.pathname.split('/messages/')[1]
@@ -62,7 +67,7 @@ export function ChatNotificationProvider({ children }: { children: ReactNode }) 
     }
     socket.on('chat_list_update', handler);
     return () => { socket.off('chat_list_update', handler); };
-  }, [socket]);
+  }, [socket, profile?._id]);
 
   const markChatAsRead = useCallback((chatId: string) => {
     setUnreadChatIds(prev => {

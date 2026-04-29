@@ -22,7 +22,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
     await safeDropDatabase(mongoose.connection);
-    await mongoose.connection.close();
 });
 
 describe("Auth Routes Tests", () => {

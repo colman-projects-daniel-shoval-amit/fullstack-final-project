@@ -66,7 +66,6 @@ afterAll(async () => {
     await new Promise<void>(resolve => httpServer.close(() => resolve()));
     setIo(null as any);
     await safeDropDatabase(mongoose.connection);
-    await mongoose.connection.close();
 });
 
 describe('Socket.io — new_message broadcast', () => {
