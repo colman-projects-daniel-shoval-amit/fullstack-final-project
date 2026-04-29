@@ -9,6 +9,7 @@ class BaseController {
     }
 
     handleError(res: Response, error: any) {
+        console.error("❌ Error:", error);
         if (error.name === 'ValidationError' || error.name === 'CastError') {
             res.status(400).send({ error: error.message });
         } else {

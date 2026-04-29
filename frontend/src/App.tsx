@@ -13,6 +13,7 @@ import { MessagesPage } from '@/pages/MessagesPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useUser } from '@/context/UserContext';
+import AIChatWidget from "./components/AIChatWidget";
 
 function OnboardingGuard() {
   const { profile, isLoadingProfile } = useUser();
@@ -44,6 +45,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/not-found" replace />} />
     </Routes>
+      <AIChatWidget />
     </>
   );
 }

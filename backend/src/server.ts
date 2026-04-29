@@ -17,6 +17,7 @@ import cors from "cors";
 import { authenticate } from "./middlewares/authMiddleware";
 import { uploadSingle } from "./middlewares/uploadMiddleware";
 import { swaggerUi, swaggerSpec } from "./swagger";
+import aiChatRouter from "./routes/aiChatRoute";
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.post('/upload', uploadSingle('image'), (req, res) => {
     const url = `/uploads/${req.file.filename}`;
     res.status(201).json({ url });
 });
+app.use('/aichat', aiChatRouter);
 app.use('/posts', postRouter);
 app.use('/comments', commentsRouter);
 app.use('/users', userRouter);

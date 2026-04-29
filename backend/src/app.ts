@@ -1,15 +1,19 @@
-import { createServer } from 'http';
+import { createServer } from 'https';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { config } from './config/config';
 import initApp from './server';
 import { setIo } from './socket';
 import ChatModel from './models/chatModel';
+import { readFileSync } from 'fs';
 
 initApp().then((app) => {
-    const httpServer = createServer(app);
+    const httpsServer = createServer({
+        key: readFileSync('/home/node69/cert/client-key.pem'),
+        cert: readFileSync('/home/node69/cert/client-cert.pem'),
+    }, app);
 
-    const io = new Server(httpServer, {
+    const io = new Server(httpsServer, {
         cors: { origin: config.FRONTEND_URL, credentials: true },
     });
 
@@ -50,7 +54,7 @@ initApp().then((app) => {
         });
     });
 
-    httpServer.listen(config.PORT, () => {
+    httpsServer.listen(config.PORT, () => {
         console.log(`Server listening on http://localhost:${config.PORT}`);
     });
 });

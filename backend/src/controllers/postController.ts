@@ -2,6 +2,8 @@ import PostModel from "../models/postModel";
 import baseController from "./baseController";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { Request, Response } from "express";
+import PostChunkModel from "../models/postChunkModel";
+import { getEmbedding } from "../services/embeddingService";
 import { geminiModel } from "../lib/gemini";
 
 class PostController extends baseController {
@@ -48,12 +50,14 @@ class PostController extends baseController {
         }
     }
 
-    async create(req: AuthRequest, res: Response) {
-        const userId = req.user?._id;
+    async create(req: Request, res: Response): Promise<void>  {
+
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?._id;
         if (!userId) {
+            res.status(401).send();
             return;
         }
-        req.body.authorId = userId;
 
         const { title, text } = req.body;
         if (title && text) {
@@ -64,10 +68,33 @@ class PostController extends baseController {
             } catch { }
         }
 
-        super.create(req, res);
+        try {
+            const post = await PostModel.create({ ...req.body, authorId: userId });
+    
+            res.status(201).json(post); 
+    
+            this.generateAndStoreChunks(post._id, post.text).catch(err =>
+                console.error("Chunk indexing failed:", err)
+            );
+    
+        } catch (error) {
+            this.handleError(res, error);
+        }
+      }
+    
+    splitArticle(text: string, size = 500, overlap = 100) {
+        const chunks: string[] = [];
+      
+        for (let i = 0; i < text.length; i += size - overlap) {
+          chunks.push(text.slice(i, i + size));
+        }
+      
+        return chunks;
     }
 
+    
     async put(req: AuthRequest, res: Response) {
+        const authReq = req as AuthRequest;
         const id = req.params.id;
         const userId = req.user?._id;
         try {
@@ -80,10 +107,43 @@ class PostController extends baseController {
                 res.status(403).json({ error: "Unauthorized" });
                 return;
             }
-            super.put(req, res);
+            post.text = req.body.text ?? post.text;
+            post.title = req.body.title ?? post.title;
+            post.image = req.body.image ?? post.image;
+            post.topics = req.body.topics ?? post.topics;
+
+            await post.save();
+            if (req.body.text) {
+                await PostChunkModel.deleteMany({ postId: post._id });
+                
+                this.generateAndStoreChunks(post._id, post.text);
+            }
+            res.json(post);
+            return;
         } catch (error) {
             this.handleError(res, error);
+            return;
         }
+    }
+
+    async generateAndStoreChunks(postId: unknown, text: string) {
+        const chunks = this.splitArticle(text);
+        const CONCURRENCY = 3;
+        const chunkDocs = [];
+    
+        for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+            const batch = chunks.slice(i, i + CONCURRENCY);
+            const results = await Promise.all(
+                batch.map(async (chunk) => ({
+                    postId,
+                    content: chunk,
+                    embedding: await getEmbedding(chunk)
+                }))
+            );
+            chunkDocs.push(...results);
+        }
+    
+        await PostChunkModel.insertMany(chunkDocs);
     }
 
     async delete(req: Request, res: Response) {
