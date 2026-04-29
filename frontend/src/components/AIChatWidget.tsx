@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { aiChatService } from '@/services/aiChatService';
 import ReactMarkdown from "react-markdown";
+import { MessageSquare, X, Send } from "lucide-react";
 
 const AIChatWidget = () => {
   const [open, setOpen] = useState(false);
@@ -56,119 +57,53 @@ const AIChatWidget = () => {
 
   return (
     <>
-      <div
+      <button
         onClick={() => setOpen(!open)}
-        style={{
-          position: "fixed",
-          bottom: 20,
-          right: 20,
-          width: 60,
-          height: 60,
-          borderRadius: "50%",
-          backgroundColor: "#007bff",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          fontSize: 24,
-          zIndex: 1000,
-        }}
+        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center transition-colors"
       >
-        💬
-      </div>
+        {open ? <X size={22} /> : <MessageSquare size={22} />}
+      </button>
 
       {open && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 90,
-            right: 20,
-            width: 320,
-            height: 400,
-            backgroundColor: "white",
-            borderRadius: 10,
-            boxShadow: "0 0 10px rgba(0,0,0,0.2)",
-            display: "flex",
-            flexDirection: "column",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              padding: 10,
-              backgroundColor: "#007bff",
-              color: "white",
-              borderTopLeftRadius: 10,
-              borderTopRightRadius: 10,
-              fontWeight: "bold",
-            }}
-          >
-            Ask Me Anything
+        <div className="fixed bottom-24 right-5 z-50 w-80 h-[420px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200">
+          <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white">
+            <span className="font-semibold text-sm">Ask Me Anything</span>
+            <button onClick={() => setOpen(false)} className="hover:opacity-75 transition-opacity">
+              <X size={18} />
+            </button>
           </div>
 
-          <div
-            style={{
-              flex: 1,
-              padding: 10,
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
+          <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-2 bg-gray-50">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                style={{
-                  alignSelf:
-                    msg.role === "user" ? "flex-end" : "flex-start",
-                  backgroundColor:
-                    msg.role === "user" ? "#007bff" : "#eee",
-                  color: msg.role === "user" ? "white" : "black",
-                  padding: "6px 10px",
-                  borderRadius: 8,
-                  maxWidth: "80%",
-                }}
+                className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                  msg.role === "user"
+                    ? "self-end bg-blue-600 text-white rounded-br-sm"
+                    : "self-start bg-white text-gray-800 border border-gray-200 rounded-bl-sm"
+                }`}
               >
                 <ReactMarkdown>{msg.text}</ReactMarkdown>
               </div>
             ))}
-
             <div ref={messagesEndRef} />
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              borderTop: "1px solid #ddd",
-            }}
-          >
+          <div className="flex items-center border-t border-gray-200 bg-white px-2 py-2 gap-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask something..."
-              style={{
-                flex: 1,
-                border: "none",
-                padding: 10,
-                outline: "none",
-              }}
+              className="flex-1 text-sm px-3 py-2 rounded-full border border-gray-200 outline-none focus:border-blue-400 transition-colors"
               onKeyDown={(e) => {
                 if (e.key === "Enter") sendMessage();
               }}
             />
             <button
               onClick={sendMessage}
-              style={{
-                padding: "0 15px",
-                border: "none",
-                backgroundColor: "#007bff",
-                color: "white",
-                cursor: "pointer",
-              }}
+              className="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-colors shrink-0"
             >
-              Send
+              <Send size={15} />
             </button>
           </div>
         </div>
